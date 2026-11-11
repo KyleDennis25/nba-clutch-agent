@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paramount Caddie</title>
+<style>
+  :root {
+    --paper: #f4efe1;
+    --card: #fffdf7;
+    --ink: #22281f;
+    --muted: #6b705f;
+    --green: #1f4d2b;
+    --green-light: #e3ecd9;
+    --gold: #b08a2e;
+    --line: #d8d0b8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.5;
+    /* Fill the window exactly: header on top, panels below, no page scroll */
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    background: var(--green);
+    color: var(--paper);
+    padding: 10px 16px;
+    text-align: center;
+    border-bottom: 3px solid var(--gold);
+  }
+  header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.5px; }
+  header p { margin: 2px auto 0; max-width: 720px; font-size: 0.9rem; line-height: 1.35; color: #dfe7d2; }
+
+  /* ---------- Layout: bag panel on the left, chat on the right ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 1000px;
+    margin: 12px auto;
+    padding: 0 16px;
+    flex: 1;
+    min-height: 0;
+  }
+  .layout > * { min-height: 0; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .panel h2 {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    color: var(--green);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+  .hint { margin: 8px 0; font-size: 0.85rem; color: var(--muted); }
+
+  /* ---------- Bag panel ---------- */
+  label.field { display: block; font-size: 0.85rem; margin-top: 10px; color: var(--muted); }
+  select, input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+    font: inherit;
+  }
+  .club-row { display: grid; grid-template-columns: 1fr 90px; gap: 8px; margin-top: 5px; align-items: center; }
+  .club-row input { padding: 6px 8px; }
+  .club-row span { font-size: 0.95rem; }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid var(--green);
+    padding: 8px 14px;
+  }
+  .primary { background: var(--green); color: var(--paper); }
+  .primary:hover { background: #17391f; }
+  .secondary { background: transparent; color: var(--green); }
+  .secondary:hover { background: var(--green-light); }
+  .bag button { width: 100%; margin-top: 10px; }
+
+  /* ---------- Chat panel ---------- */
+  .chat { display: flex; flex-direction: column; }
+  .bag { overflow-y: auto; }
+  .chat-top { display: flex; justify-content: space-between; align-items: center; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .chip {
+    background: var(--green-light);
+    color: var(--green);
+    border: 1px solid var(--green);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+  }
+  .chip:hover { background: #d3e2c5; }
+
+  .messages { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 2px; }
+  .msg { max-width: 85%; padding: 10px 14px; border-radius: 10px; margin: 8px 0; }
+  .msg.user { background: var(--green); color: var(--paper); margin-left: auto; }
+  .msg.caddie { background: #fff; border: 1px solid var(--line); }
+
+  /* ---------- Tool call card ---------- */
+  .tool-card {
+    max-width: 85%;
+    margin: 8px 0;
+    border: 1px dashed var(--gold);
+    border-radius: 8px;
+    background: #fbf6e6;
+    font-size: 0.85rem;
+  }
+  .tool-card summary { cursor: pointer; padding: 8px 12px; color: var(--ink); }
+  .tool-card .tool-name { font-family: Menlo, Consolas, monospace; color: var(--gold); font-weight: bold; }
+  .tool-card pre {
+    margin: 0;
+    padding: 8px 12px 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  /* ---------- Input bar ---------- */
+  .input-bar { display: flex; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .input-bar input { flex: 1; }
+
+  /* ---------- Phones: stack the panels ---------- */
+  @media (max-width: 760px) {
+    body { height: auto; }
+    .layout { grid-template-columns: 1fr; grid-template-rows: auto; }
+    .chat { min-height: 480px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Paramount Caddie</h1>
+  <p>
+    A tour-caddie style assistant for Paramount Country Club in New City, NY.
+    Ask about any hole and get live wind, plays-like yardage and a club
+    recommendation from your own bag.
+  </p>
+</header>
+
+<div class="layout">
+
+  <!-- ===== Left: your tee and your bag ===== -->
+  <aside class="panel bag">
+    <h2>My Bag</h2>
+    <p class="hint">Enter your tee and how far each club carries, in yards. Leave blank any club you don't carry.</p>
+
+    <label class="field" for="tee">Tee</label>
+    <select id="tee">
+      <option value="" selected>Not set</option>
+      <option>Black</option>
+      <option>Black/Blue</option>
+      <option>Blue</option>
+      <option>Blue/Silver</option>
+      <option>Silver</option>
+      <option>Silver/Green</option>
+      <option>Green</option>
+    </select>
+
+    <div class="club-row"><span>Driver</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>3-wood</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>4-iron</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>6-iron</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>7-iron</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>8-iron</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>9-iron</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>Pitching wedge</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>Gap wedge</span><input type="number" min="0" placeholder="yds"></div>
+    <div class="club-row"><span>Sand wedge</span><input type="number" min="0" placeholder="yds"></div>
+
+    <button class="primary" type="button">Save bag</button>
+  </aside>
+
+  <!-- ===== Right: the chat ===== -->
+  <main class="panel chat">
+    <div class="chat-top">
+      <h2 style="flex:1">On the course</h2>
+      <button class="secondary" type="button">New round</button>
+    </div>
+
+    <p class="hint">Try one of these, or ask your own question:</p>
+    <div class="chips">
+      <button class="chip" type="button">I'm on hole 7, 150 out. What club?</button>
+      <button class="chip" type="button">Tell me about hole 13</button>
+      <button class="chip" type="button">How's the wind right now?</button>
+    </div>
+
+    <div class="messages"></div>
+
+    <form class="input-bar">
+      <input type="text" placeholder="Ask your caddie...">
+      <button class="primary" type="submit">Send</button>
+    </form>
+  </main>
+
+</div>
+
+<script>
+  // The server gives us a session_id on the first reply. We send it back with
+  // every message so the server knows which conversation this belongs to.
+  let sessionId = null;
+
+  const messagesEl = document.querySelector(".messages");
+  const form = document.querySelector(".input-bar");
+  const input = form.querySelector("input");
+  const sendButton = form.querySelector("button");
+
+  function addMessage(text, who) {
+    const div = document.createElement("div");
+    div.className = "msg " + who; // "msg user" or "msg caddie"
+    div.textContent = text;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return div;
+  }
+
+  const teeEl = document.getElementById("tee");
+  const clubRows = [...document.querySelectorAll(".club-row")];
+  const saveButton = document.querySelector(".bag .primary");
+
+  // The tee and bag as a sentence the caddie can read.
+  function bagText() {
+    const clubs = clubRows
+      .map((row) => ({name: row.querySelector("span").textContent, carry: row.querySelector("input").value}))
+      .filter((c) => c.carry > 0);
+    const parts = [];
+    if (teeEl.value) parts.push("I play the " + teeEl.value + " tees.");
+    if (clubs.length) parts.push("My bag: " + clubs.map((c) => c.name + " " + c.carry).join(", ") + ".");
+    return parts.length ? "My saved settings: " + parts.join(" ") : "";
+  }
+
+  // Remember the bag in this browser between visits.
+  function saveBag() {
+    try {
+      localStorage.setItem("caddieBag", JSON.stringify({
+        tee: teeEl.value,
+        carries: clubRows.map((row) => row.querySelector("input").value),
+      }));
+    } catch (err) {}
+  }
+
+  function loadBag() {
+    try {
+      const saved = JSON.parse(localStorage.getItem("caddieBag"));
+      if (!saved) return;
+      teeEl.value = saved.tee;
+      clubRows.forEach((row, i) => (row.querySelector("input").value = saved.carries[i] || ""));
+    } catch (err) {}
+  }
+
+  function showWelcome() {
+    addMessage("Afternoon. Tell me the hole, your tee and how far out you are.", "caddie");
+  }
+
+  // A short label for the collapsed card, built from the call's args and result.
+  function toolLabel(call, result) {
+    const a = call.args;
+    switch (call.name) {
+      case "get_course_hole_info":
+        return "hole " + a.hole_number + (a.tee ? ", " + a.tee : "");
+      case "get_live_course_weather":
+        return a.tee_time ? "forecast " + a.tee_time : "right now";
+      case "calculate_plays_like_yardage":
+        return a.yardage + " yds" + (result.plays_like_yards ? " → plays " + result.plays_like_yards : "");
+      case "recommend_club":
+        return result.club ? "→ " + result.club + (result.swing ? " · " + result.swing : "") : "";
+      default:
+        return "";
+    }
+  }
+
+  // Build one expandable card for a tool call and put it above `beforeEl`.
+  function addToolCard(call, beforeEl) {
+    let result;
+    try { result = JSON.parse(call.result); } catch (err) { result = call.result; }
+    const info = result && typeof result === "object" ? result : {};
+
+    const card = document.createElement("details");
+    card.className = "tool-card";
+
+    const summary = document.createElement("summary");
+    const name = document.createElement("span");
+    name.className = "tool-name";
+    name.textContent = call.name;
+    summary.append(name, " · " + toolLabel(call, info));
+
+    const pre = document.createElement("pre");
+    pre.textContent =
+      "args: " + JSON.stringify(call.args, null, 2) +
+      "\n\nresult: " + JSON.stringify(result, null, 2);
+
+    card.append(summary, pre);
+    messagesEl.insertBefore(card, beforeEl);
+  }
+
+  async function sendMessage(text) {
+    addMessage(text, "user");
+    const thinking = addMessage("Checking the course...", "caddie");
+    sendButton.disabled = true;
+
+    // A new conversation starts with the player's tee and bag.
+    const prefix = sessionId ? "" : bagText();
+    const sent = prefix ? prefix + "\n\n" + text : text;
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: sent, session_id: sessionId}),
+      });
+      const data = await res.json();
+      sessionId = data.session_id;
+      thinking.textContent = data.response;
+      (data.tool_calls || []).forEach((call) => addToolCard(call, thinking));
+    } catch (err) {
+      thinking.textContent = "Couldn't reach the caddie. Try again.";
+    }
+    sendButton.disabled = false;
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // Enter or the Send button
+  form.addEventListener("submit", (event) => {
+    event.preventDefault(); // stop the browser from reloading the page
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = "";
+    sendMessage(text);
+  });
+
+  // Example chips send their own text
+  document.querySelectorAll(".chip").forEach((chip) =>
+    chip.addEventListener("click", () => sendMessage(chip.textContent))
+  );
+
+  // New round: delete the server-side conversation and start fresh
+  document.querySelector(".chat-top .secondary").addEventListener("click", async () => {
+    if (sessionId) {
+      await fetch("/clear?session_id=" + encodeURIComponent(sessionId), {method: "POST"});
+    }
+    sessionId = null;
+    messagesEl.innerHTML = "";
+    showWelcome();
+  });
+
+  // Save automatically whenever a field changes
+  teeEl.addEventListener("change", saveBag);
+  clubRows.forEach((row) => row.querySelector("input").addEventListener("change", saveBag));
+
+  saveButton.addEventListener("click", () => {
+    saveBag();
+    saveButton.textContent = "Saved ✓";
+    setTimeout(() => (saveButton.textContent = "Save bag"), 1500);
+    if (sessionId && bagText()) sendMessage("Update: " + bagText());
+  });
+
+  loadBag();
+  showWelcome();
+</script>
+
+</body>
+</html>
