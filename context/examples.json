@@ -1,0 +1,672 @@
+[
+ {
+  "id": "clutch_fg_leaders",
+  "topic": "players",
+  "question": "Which players shoot best in clutch time (2015-16 to 2022-23, min 150 clutch FGA)?",
+  "sql": "SELECT player_name, SUM(fga) AS clutch_fga, SUM(fgm) AS clutch_fgm,\n       ROUND(100.0 * SUM(fgm) / SUM(fga), 1) AS fg_pct,\n       ROUND(100.0 * (SUM(fgm) + 0.5 * SUM(fg3m)) / SUM(fga), 1) AS efg_pct\nFROM player_shooting\nWHERE is_clutch\nGROUP BY player_id, player_name\nHAVING SUM(fga) >= 150\nORDER BY efg_pct DESC\nLIMIT 10",
+  "columns": [
+   "player_name",
+   "clutch_fga",
+   "clutch_fgm",
+   "fg_pct",
+   "efg_pct"
+  ],
+  "sample_rows": [
+   [
+    "Rudy Gobert",
+    "189",
+    "130",
+    "68.8",
+    "68.8"
+   ],
+   [
+    "Bam Adebayo",
+    "165",
+    "99",
+    "60.0",
+    "60.0"
+   ],
+   [
+    "Andre Drummond",
+    "179",
+    "105",
+    "58.7",
+    "58.9"
+   ],
+   [
+    "Kelly Oubre Jr.",
+    "200",
+    "93",
+    "46.5",
+    "58.3"
+   ],
+   [
+    "Joe Harris",
+    "161",
+    "77",
+    "47.8",
+    "58.1"
+   ]
+  ]
+ },
+ {
+  "id": "clutch_dropoff",
+  "topic": "players",
+  "question": "Which players get worse in clutch time compared to the rest of the game (biggest FG% drop, min 200 clutch FGA)?",
+  "sql": "WITH s AS (\n  SELECT player_id, player_name,\n         SUM(fga) FILTER (WHERE is_clutch) AS c_fga, SUM(fgm) FILTER (WHERE is_clutch) AS c_fgm,\n         SUM(fga) FILTER (WHERE NOT is_clutch) AS n_fga, SUM(fgm) FILTER (WHERE NOT is_clutch) AS n_fgm\n  FROM player_shooting GROUP BY player_id, player_name)\nSELECT player_name, c_fga AS clutch_fga, ROUND(100.0 * c_fgm / c_fga, 1) AS clutch_fg_pct,\n       n_fga AS other_fga, ROUND(100.0 * n_fgm / n_fga, 1) AS other_fg_pct,\n       ROUND(100.0 * c_fgm / c_fga - 100.0 * n_fgm / n_fga, 1) AS diff_pts\nFROM s WHERE c_fga >= 200 AND n_fga >= 2000\nORDER BY diff_pts ASC\nLIMIT 10",
+  "columns": [
+   "player_name",
+   "clutch_fga",
+   "clutch_fg_pct",
+   "other_fga",
+   "other_fg_pct",
+   "diff_pts"
+  ],
+  "sample_rows": [
+   [
+    "Kevin Durant",
+    "476",
+    "42.4",
+    "8264",
+    "52.2",
+    "-9.8"
+   ],
+   [
+    "Zach LaVine",
+    "485",
+    "37.7",
+    "6720",
+    "47.0",
+    "-9.3"
+   ],
+   [
+    "Blake Griffin",
+    "221",
+    "37.1",
+    "4573",
+    "46.2",
+    "-9.1"
+   ],
+   [
+    "Klay Thompson",
+    "292",
+    "37.0",
+    "7944",
+    "45.9",
+    "-8.9"
+   ],
+   [
+    "Khris Middleton",
+    "358",
+    "37.4",
+    "7440",
+    "45.9",
+    "-8.5"
+   ]
+  ]
+ },
+ {
+  "id": "player_clutch_by_season",
+  "topic": "players",
+  "question": "How has a specific player (here Stephen Curry) shot in clutch vs non-clutch situations each season?",
+  "sql": "SELECT season_label, is_clutch, SUM(fga) AS fga, SUM(fgm) AS fgm,\n       ROUND(100.0 * SUM(fgm) / SUM(fga), 1) AS fg_pct, SUM(fta) AS fta, SUM(ftm) AS ftm\nFROM player_shooting\nWHERE player_name = 'Stephen Curry' AND season_type = 'Regular Season'\nGROUP BY season_label, is_clutch\nORDER BY season_label, is_clutch",
+  "columns": [
+   "season_label",
+   "is_clutch",
+   "fga",
+   "fgm",
+   "fg_pct",
+   "fta",
+   "ftm"
+  ],
+  "sample_rows": [
+   [
+    "2015-16",
+    "False",
+    "1412",
+    "718",
+    "50.8",
+    "328",
+    "298"
+   ],
+   [
+    "2015-16",
+    "True",
+    "85",
+    "37",
+    "43.5",
+    "49",
+    "45"
+   ],
+   [
+    "2016-17",
+    "False",
+    "1244",
+    "584",
+    "46.9",
+    "302",
+    "269"
+   ],
+   [
+    "2016-17",
+    "True",
+    "46",
+    "20",
+    "43.5",
+    "20",
+    "19"
+   ],
+   [
+    "2017-18",
+    "False",
+    "783",
+    "386",
+    "49.3",
+    "262",
+    "243"
+   ]
+  ]
+ },
+ {
+  "id": "team_clutch_net",
+  "topic": "teams",
+  "question": "Which teams outscore opponents the most in clutch time (2022-23 regular season)?",
+  "sql": "SELECT team, COUNT(*) AS clutch_games, SUM(clutch_pts_for) AS pts_for, SUM(clutch_pts_against) AS pts_against,\n       SUM(clutch_pts_for - clutch_pts_against) AS net_pts,\n       ROUND(AVG(clutch_pts_for - clutch_pts_against), 2) AS net_per_game\nFROM team_game_clutch\nWHERE season_start_year = 2022 AND season_type = 'Regular Season'\nGROUP BY team\nORDER BY net_pts DESC\nLIMIT 10",
+  "columns": [
+   "team",
+   "clutch_games",
+   "pts_for",
+   "pts_against",
+   "net_pts",
+   "net_per_game"
+  ],
+  "sample_rows": [
+   [
+    "MIA",
+    "49",
+    "479",
+    "409",
+    "70",
+    "1.43"
+   ],
+   [
+    "PHI",
+    "40",
+    "372",
+    "312",
+    "60",
+    "1.5"
+   ],
+   [
+    "NOP",
+    "32",
+    "337",
+    "282",
+    "55",
+    "1.72"
+   ],
+   [
+    "SAC",
+    "42",
+    "497",
+    "449",
+    "48",
+    "1.14"
+   ],
+   [
+    "LAL",
+    "40",
+    "377",
+    "335",
+    "42",
+    "1.05"
+   ]
+  ]
+ },
+ {
+  "id": "team_clutch_record",
+  "topic": "teams",
+  "question": "What is each team's win-loss record in games that had clutch time (2022-23 regular season)?",
+  "sql": "SELECT t.team, COUNT(*) AS clutch_games, SUM((g.winner = t.team)::INT) AS wins,\n       COUNT(*) - SUM((g.winner = t.team)::INT) AS losses,\n       ROUND(100.0 * SUM((g.winner = t.team)::INT) / COUNT(*), 1) AS win_pct\nFROM team_game_clutch t JOIN games g USING (game_id)\nWHERE t.season_start_year = 2022 AND t.season_type = 'Regular Season'\nGROUP BY t.team\nORDER BY win_pct DESC, clutch_games DESC\nLIMIT 10",
+  "columns": [
+   "team",
+   "clutch_games",
+   "wins",
+   "losses",
+   "win_pct"
+  ],
+  "sample_rows": [
+   [
+    "MIL",
+    "32",
+    "25",
+    "7",
+    "78.1"
+   ],
+   [
+    "BOS",
+    "33",
+    "22",
+    "11",
+    "66.7"
+   ],
+   [
+    "BKN",
+    "35",
+    "22",
+    "13",
+    "62.9"
+   ],
+   [
+    "MEM",
+    "31",
+    "19",
+    "12",
+    "61.3"
+   ],
+   [
+    "MIA",
+    "49",
+    "30",
+    "19",
+    "61.2"
+   ]
+  ]
+ },
+ {
+  "id": "clutch_free_throws",
+  "topic": "players",
+  "question": "How does free-throw shooting change in clutch time, league-wide?",
+  "sql": "SELECT is_clutch, SUM(fta) AS fta, SUM(ftm) AS ftm, ROUND(100.0 * SUM(ftm) / SUM(fta), 2) AS ft_pct\nFROM player_shooting\nGROUP BY is_clutch ORDER BY is_clutch",
+  "columns": [
+   "is_clutch",
+   "fta",
+   "ftm",
+   "ft_pct"
+  ],
+  "sample_rows": [
+   [
+    "False",
+    "394142",
+    "303917",
+    "77.11"
+   ],
+   [
+    "True",
+    "27427",
+    "21255",
+    "77.5"
+   ]
+  ]
+ },
+ {
+  "id": "comeback_rate_by_season",
+  "topic": "comebacks",
+  "question": "How often do teams come back from double-digit deficits to win, by season (regular season)?",
+  "sql": "SELECT season_label, COUNT(*) AS games, SUM(comeback_10::INT) AS wins_after_trailing_10,\n       ROUND(100.0 * SUM(comeback_10::INT) / COUNT(*), 1) AS pct_10,\n       SUM(comeback_20::INT) AS wins_after_trailing_20,\n       ROUND(100.0 * SUM(comeback_20::INT) / COUNT(*), 2) AS pct_20\nFROM game_swings\nWHERE season_type = 'Regular Season'\nGROUP BY season_label ORDER BY season_label",
+  "columns": [
+   "season_label",
+   "games",
+   "wins_after_trailing_10",
+   "pct_10",
+   "wins_after_trailing_20",
+   "pct_20"
+  ],
+  "sample_rows": [
+   [
+    "2015-16",
+    "1121",
+    "241",
+    "21.5",
+    "15",
+    "1.34"
+   ],
+   [
+    "2016-17",
+    "1129",
+    "293",
+    "26.0",
+    "14",
+    "1.24"
+   ],
+   [
+    "2017-18",
+    "1128",
+    "279",
+    "24.7",
+    "26",
+    "2.3"
+   ],
+   [
+    "2018-19",
+    "1122",
+    "294",
+    "26.2",
+    "26",
+    "2.32"
+   ],
+   [
+    "2019-20",
+    "963",
+    "258",
+    "26.8",
+    "22",
+    "2.28"
+   ]
+  ]
+ },
+ {
+  "id": "blown_leads_by_team",
+  "topic": "comebacks",
+  "question": "Which teams have most often lost after leading by 15+ points (all seasons)?",
+  "sql": "SELECT loser AS team, COUNT(*) AS losses, SUM(comeback_15::INT) AS losses_after_leading_15,\n       ROUND(100.0 * SUM(comeback_15::INT) / COUNT(*), 1) AS pct_of_losses\nFROM game_swings\nGROUP BY loser\nORDER BY losses_after_leading_15 DESC\nLIMIT 10",
+  "columns": [
+   "team",
+   "losses",
+   "losses_after_leading_15",
+   "pct_of_losses"
+  ],
+  "sample_rows": [
+   [
+    "NYK",
+    "359",
+    "41",
+    "11.4"
+   ],
+   [
+    "MIN",
+    "334",
+    "38",
+    "11.4"
+   ],
+   [
+    "HOU",
+    "312",
+    "34",
+    "10.9"
+   ],
+   [
+    "OKC",
+    "307",
+    "33",
+    "10.7"
+   ],
+   [
+    "POR",
+    "320",
+    "32",
+    "10.0"
+   ]
+  ]
+ },
+ {
+  "id": "q3_lead_hold_rate",
+  "topic": "comebacks",
+  "question": "How often does a team that leads by 10+ after three quarters hold on to win, by lead size?",
+  "sql": "WITH q3 AS (SELECT game_id, home_margin AS m3 FROM plays WHERE event_type = 'PERIOD_END' AND period = 3),\nlead AS (\n  SELECT q.game_id, ABS(m3) AS lead_pts, (m3 > 0) = g.home_won AS held\n  FROM q3 q JOIN games g USING (game_id) WHERE ABS(m3) >= 10)\nSELECT CASE WHEN lead_pts >= 20 THEN '20+' WHEN lead_pts >= 15 THEN '15-19' ELSE '10-14' END AS lead_after_q3,\n       COUNT(*) AS games, SUM(held::INT) AS held_on, ROUND(100.0 * AVG(held::INT), 1) AS hold_pct\nFROM lead GROUP BY 1 ORDER BY 1",
+  "columns": [
+   "lead_after_q3",
+   "games",
+   "held_on",
+   "hold_pct"
+  ],
+  "sample_rows": [
+   [
+    "10-14",
+    "1781",
+    "1612",
+    "90.5"
+   ],
+   [
+    "15-19",
+    "1210",
+    "1172",
+    "96.9"
+   ],
+   [
+    "20+",
+    "1390",
+    "1388",
+    "99.9"
+   ]
+  ]
+ },
+ {
+  "id": "blown_lead_predictors",
+  "topic": "comebacks",
+  "question": "Among teams leading by 10+ after Q3, do those that blow the lead commit more 4th-quarter turnovers/fouls and get outscored?",
+  "sql": "WITH q3 AS (SELECT game_id, home_margin AS m3 FROM plays WHERE event_type = 'PERIOD_END' AND period = 3),\nlead AS (\n  SELECT q.game_id, CASE WHEN m3 > 0 THEN 'HOME' ELSE 'AWAY' END AS leader_side,\n         (m3 > 0) = g.home_won AS held\n  FROM q3 q JOIN games g USING (game_id) WHERE ABS(m3) >= 10),\nq4 AS (\n  SELECT l.game_id, l.held,\n    COUNT(*) FILTER (WHERE p.event_type = 'TURNOVER' AND p.acting_side = l.leader_side) AS leader_tov,\n    COUNT(*) FILTER (WHERE p.event_type = 'FOUL' AND p.acting_side = l.leader_side) AS leader_fouls,\n    COALESCE(SUM(p.points_scored) FILTER (WHERE p.acting_side = l.leader_side), 0) AS leader_pts,\n    COALESCE(SUM(p.points_scored) FILTER (WHERE p.acting_side <> l.leader_side), 0) AS trailer_pts\n  FROM lead l JOIN plays p ON p.game_id = l.game_id AND p.period = 4\n  GROUP BY l.game_id, l.held, l.leader_side)\nSELECT CASE WHEN held THEN 'held lead' ELSE 'blew lead' END AS outcome, COUNT(*) AS games,\n       ROUND(AVG(leader_tov), 2) AS avg_q4_turnovers, ROUND(AVG(leader_fouls), 2) AS avg_q4_fouls,\n       ROUND(AVG(leader_pts), 1) AS avg_q4_pts_leader, ROUND(AVG(trailer_pts), 1) AS avg_q4_pts_trailer\nFROM q4 GROUP BY held ORDER BY held DESC",
+  "columns": [
+   "outcome",
+   "games",
+   "avg_q4_turnovers",
+   "avg_q4_fouls",
+   "avg_q4_pts_leader",
+   "avg_q4_pts_trailer"
+  ],
+  "sample_rows": [
+   [
+    "held lead",
+    "4172",
+    "3.99",
+    "5.85",
+    "26.0",
+    "27.1"
+   ],
+   [
+    "blew lead",
+    "209",
+    "4.5",
+    "6.84",
+    "19.0",
+    "34.8"
+   ]
+  ]
+ },
+ {
+  "id": "biggest_scoring_runs",
+  "topic": "comebacks",
+  "question": "What are the biggest unanswered scoring runs in a single game (2022-23 regular season)?",
+  "sql": "WITH sc AS (\n  SELECT p.game_id, p.acting_side, p.points_scored, p.period,\n         ROW_NUMBER() OVER (PARTITION BY p.game_id ORDER BY p.period, p.secs_left_period DESC, p.eventnum) AS rn\n  FROM plays p\n  WHERE p.points_scored > 0 AND p.acting_side IS NOT NULL\n    AND p.season_start_year = 2022 AND p.season_type = 'Regular Season'),\ngrp AS (\n  SELECT *, rn - ROW_NUMBER() OVER (PARTITION BY game_id, acting_side ORDER BY rn) AS island FROM sc),\nruns AS (\n  SELECT game_id, acting_side, SUM(points_scored) AS run_pts, MIN(period) AS start_period\n  FROM grp GROUP BY game_id, acting_side, island)\nSELECT g.game_date, g.home_team, g.away_team,\n       CASE r.acting_side WHEN 'HOME' THEN g.home_team ELSE g.away_team END AS run_team,\n       r.run_pts, r.start_period\nFROM runs r JOIN games g USING (game_id)\nORDER BY r.run_pts DESC LIMIT 10",
+  "columns": [
+   "game_date",
+   "home_team",
+   "away_team",
+   "run_team",
+   "run_pts",
+   "start_period"
+  ],
+  "sample_rows": [
+   [
+    "2023-02-07",
+    "DEN",
+    "MIN",
+    "DEN",
+    "24",
+    "1"
+   ],
+   [
+    "2023-04-07",
+    "MIL",
+    "MEM",
+    "MEM",
+    "23",
+    "3"
+   ],
+   [
+    "2023-03-17",
+    "HOU",
+    "NOP",
+    "HOU",
+    "22",
+    "1"
+   ],
+   [
+    "2023-01-02",
+    "NYK",
+    "PHX",
+    "NYK",
+    "21",
+    "2"
+   ],
+   [
+    "2022-11-16",
+    "TOR",
+    "MIA",
+    "TOR",
+    "21",
+    "3"
+   ]
+  ]
+ },
+ {
+  "id": "shot_mix_clutch",
+  "topic": "shots",
+  "question": "How does the shot mix and efficiency change in clutch time vs the rest of the game?",
+  "sql": "SELECT is_clutch, shot_kind, COUNT(*) AS fga,\n       ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY is_clutch), 1) AS share_of_fga,\n       ROUND(100.0 * AVG((event_type = 'MADE_SHOT')::INT), 1) AS fg_pct\nFROM plays\nWHERE event_type IN ('MADE_SHOT', 'MISSED_SHOT')\nGROUP BY is_clutch, shot_kind\nORDER BY is_clutch, fga DESC",
+  "columns": [
+   "is_clutch",
+   "shot_kind",
+   "fga",
+   "share_of_fga",
+   "fg_pct"
+  ],
+  "sample_rows": [
+   [
+    "False",
+    "three_pointer",
+    "557094",
+    "35.8",
+    "36.0"
+   ],
+   [
+    "False",
+    "two_point_jumper",
+    "447696",
+    "28.7",
+    "41.6"
+   ],
+   [
+    "False",
+    "layup",
+    "414096",
+    "26.6",
+    "55.9"
+   ],
+   [
+    "False",
+    "dunk",
+    "85709",
+    "5.5",
+    "89.5"
+   ],
+   [
+    "False",
+    "hook",
+    "52395",
+    "3.4",
+    "48.3"
+   ]
+  ]
+ },
+ {
+  "id": "shot_distance_clutch",
+  "topic": "shots",
+  "question": "Do teams shoot from farther out in clutch time, and does it pay off (shot distance buckets)?",
+  "sql": "WITH shots AS (\n  SELECT is_clutch, event_type,\n         CASE WHEN shot_distance_ft <= 4 THEN 1 WHEN shot_distance_ft <= 14 THEN 2\n              WHEN shot_distance_ft <= 22 THEN 3 ELSE 4 END AS bucket\n  FROM plays\n  WHERE event_type IN ('MADE_SHOT', 'MISSED_SHOT') AND shot_distance_ft IS NOT NULL)\nSELECT is_clutch,\n       CASE bucket WHEN 1 THEN '0-4 ft' WHEN 2 THEN '5-14 ft' WHEN 3 THEN '15-22 ft' ELSE '23+ ft' END AS distance,\n       COUNT(*) AS fga,\n       ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (PARTITION BY is_clutch), 1) AS share_of_fga,\n       ROUND(100.0 * AVG((event_type = 'MADE_SHOT')::INT), 1) AS fg_pct\nFROM shots\nGROUP BY is_clutch, bucket\nORDER BY is_clutch, bucket",
+  "columns": [
+   "is_clutch",
+   "distance",
+   "fga",
+   "share_of_fga",
+   "fg_pct"
+  ],
+  "sample_rows": [
+   [
+    "False",
+    "0-4 ft",
+    "451017",
+    "31.8",
+    "60.4"
+   ],
+   [
+    "False",
+    "5-14 ft",
+    "297094",
+    "21.0",
+    "41.6"
+   ],
+   [
+    "False",
+    "15-22 ft",
+    "190316",
+    "13.4",
+    "40.8"
+   ],
+   [
+    "False",
+    "23+ ft",
+    "477653",
+    "33.7",
+    "35.5"
+   ],
+   [
+    "True",
+    "0-4 ft",
+    "16865",
+    "30.5",
+    "57.4"
+   ]
+  ]
+ },
+ {
+  "id": "final_minute_shooters",
+  "topic": "shots",
+  "question": "Who takes the most shots in the final 60 seconds of close games, and how do they shoot (2018-19 to 2022-23)?",
+  "sql": "SELECT player_name, COUNT(*) AS fga, SUM((event_type = 'MADE_SHOT')::INT) AS fgm,\n       ROUND(100.0 * AVG((event_type = 'MADE_SHOT')::INT), 1) AS fg_pct,\n       ROUND(100.0 * AVG(is_three::INT), 1) AS pct_threes\nFROM clutch_plays\nWHERE event_type IN ('MADE_SHOT', 'MISSED_SHOT') AND secs_left_period <= 60\n  AND season_start_year BETWEEN 2018 AND 2022\nGROUP BY player_id, player_name\nORDER BY fga DESC LIMIT 10",
+  "columns": [
+   "player_name",
+   "fga",
+   "fgm",
+   "fg_pct",
+   "pct_threes"
+  ],
+  "sample_rows": [
+   [
+    "Donovan Mitchell",
+    "142",
+    "49",
+    "34.5",
+    "40.8"
+   ],
+   [
+    "Damian Lillard",
+    "131",
+    "55",
+    "42.0",
+    "43.5"
+   ],
+   [
+    "DeMar DeRozan",
+    "122",
+    "54",
+    "44.3",
+    "11.5"
+   ],
+   [
+    "LeBron James",
+    "121",
+    "38",
+    "31.4",
+    "47.9"
+   ],
+   [
+    "Luka Doncic",
+    "120",
+    "49",
+    "40.8",
+    "56.7"
+   ]
+  ]
+ }
+]

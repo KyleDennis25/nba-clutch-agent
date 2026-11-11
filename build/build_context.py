@@ -2,7 +2,9 @@
 Run: uv run python build/build_context.py
 Writes context/schema.md, context/glossary.md, context/teams.md (numbers are computed live from the data).
 """
+import json
 import pathlib
+import sys
 import duckdb
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -156,8 +158,42 @@ def teams_md():
     return "\n".join(out) + "\n"
 
 
+def run_examples():
+    """Run every verified example; fail the build if one errors or returns no rows."""
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from examples import EXAMPLES
+    results = []
+    for e in EXAMPLES:
+        sql = e["sql"].strip()
+        try:
+            cur = con.execute(sql)
+            cols = [d[0] for d in cur.description]
+            rows = cur.fetchmany(5)
+        except Exception as ex:
+            raise SystemExit(f"EXAMPLE FAILED: {e['id']}: {ex}")
+        if not rows:
+            raise SystemExit(f"EXAMPLE RETURNED NO ROWS: {e['id']}")
+        results.append({**e, "sql": sql, "columns": cols, "sample_rows": [[str(v) for v in r] for r in rows]})
+    return results
+
+
+def examples_md(results):
+    out = ["# Verified example queries (each was executed against the real data)\n"]
+    for r in results:
+        out.append(f"## {r['question']}\n(id: {r['id']}, topic: {r['topic']})\n\n```sql\n{r['sql']}\n```")
+        out.append("Sample result: " + " | ".join(r["columns"]))
+        out += ["  " + " | ".join(row) for row in r["sample_rows"][:3]]
+        out.append("")
+    return "\n".join(out) + "\n"
+
+
 if __name__ == "__main__":
     for name, fn in [("schema.md", schema_md), ("glossary.md", glossary_md), ("teams.md", teams_md)]:
         text = fn()
         (CTX / name).write_text(text)
         print(f"{name:12s} {len(text):6d} chars  (~{len(text)//4} tokens)")
+    results = run_examples()
+    (CTX / "examples.json").write_text(json.dumps(results, indent=1))
+    text = examples_md(results)
+    (CTX / "examples.md").write_text(text)
+    print(f"examples.md  {len(text):6d} chars  ({len(results)} examples, all executed OK)")
