@@ -44,6 +44,11 @@ def _check_query(query: str) -> str | None:
 
 def run_sql(query: str) -> str:
     """Run one read-only query. Returns JSON: {columns, rows, row_count, truncated} or {error, hint}."""
+    hint = f"Available tables/views: {', '.join(VIEW_NAMES)}. Call get_context('schema') for exact column names."
+    return _execute(_con, query, hint)
+
+
+def _execute(con, query: str, error_hint: str | None) -> str:
     query = (query or "").strip()
     if not query:
         return json.dumps({"error": "Empty query."})
@@ -51,7 +56,7 @@ def run_sql(query: str) -> str:
     if problem:
         return json.dumps({"error": problem})
 
-    cur = _con.cursor()
+    cur = con.cursor()
     timer = threading.Timer(QUERY_TIMEOUT_S, cur.interrupt)
     timer.start()
     try:
@@ -62,8 +67,10 @@ def run_sql(query: str) -> str:
         return json.dumps({"error": f"Query timed out after {QUERY_TIMEOUT_S}s.",
                            "hint": "Filter by season/season_type first, aggregate earlier, or avoid joining plays to itself."})
     except Exception as e:
-        hint = f"Available tables/views: {', '.join(VIEW_NAMES)}. Call get_context('schema') for exact column names."
-        return json.dumps({"error": f"{type(e).__name__}: {e}", "hint": hint})
+        err = {"error": f"{type(e).__name__}: {e}"}
+        if error_hint:
+            err["hint"] = error_hint
+        return json.dumps(err)
     finally:
         timer.cancel()
         cur.close()
@@ -143,6 +150,41 @@ TOOLS = [
             "query": {"type": "string", "description": "The user's question or topic in plain words."}},
             "required": ["query"]}}},
 ]
+
+# --- Plain baseline: run_sql only, over the RAW tables (original names/columns, no helper views, no docs) ---
+
+_plain_con = duckdb.connect()
+_plain_con.execute(f"SET memory_limit='{os.environ.get('DUCKDB_MEMORY', '1500MB')}'")
+_plain_con.execute(f"""
+CREATE VIEW play_by_play AS SELECT * FROM read_parquet('{DATA_DIR}/play_by_play_*.parquet');
+CREATE VIEW game AS SELECT * FROM read_parquet('{DATA_DIR}/game.parquet');
+CREATE VIEW other_stats AS SELECT * FROM read_parquet('{DATA_DIR}/other_stats.parquet');
+CREATE VIEW line_score AS SELECT * FROM read_parquet('{DATA_DIR}/line_score.parquet');
+CREATE VIEW officials AS SELECT * FROM read_parquet('{DATA_DIR}/officials.parquet');
+CREATE VIEW team AS SELECT * FROM read_parquet('{DATA_DIR}/team.parquet');
+CREATE VIEW team_history AS SELECT * FROM read_parquet('{DATA_DIR}/team_history.parquet');
+CREATE VIEW player AS SELECT * FROM read_parquet('{DATA_DIR}/player.parquet');
+""")
+
+
+def run_sql_plain(query: str) -> str:
+    return _execute(_plain_con, query, None)
+
+
+TOOLS_PLAIN = [{"type": "function", "function": {
+    "name": "run_sql",
+    "description": "Run one read-only SQL query (DuckDB) against the NBA database and return up to 200 rows as JSON.",
+    "parameters": {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}}}]
+
+
+def run_tool_plain(name: str, args: dict) -> str:
+    if name != "run_sql":
+        return json.dumps({"error": f"Unknown tool '{name}'."})
+    try:
+        return run_sql_plain(**args)
+    except TypeError as e:
+        return json.dumps({"error": f"Bad arguments for {name}: {e}"})
+
 
 _IMPL = {"run_sql": run_sql, "get_context": get_context, "search_examples": search_examples}
 

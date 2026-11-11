@@ -1,0 +1,177 @@
+{
+ "id": "comebacks_10",
+ "question": "In how many regular-season games from 2015-16 to 2022-23 did the winning team trail by 10 or more points at some point in the game, out of how many games with play-by-play?",
+ "mode": "plain",
+ "answer": "To find the number of regular-season games from the 2015-16 to 2022-23 seasons where the winning team trailed by 10 or more points, we analyze the `game` and `play_by_play` tables. \n\nIn the `play_by_play` table, the `scoremargin` column represents the score difference from the **Home team's perspective** (positive when the home team is leading, negative when the away/visitor team is leading, and `\"TIE\"` when tied). \n* If the **Home team won** (`wl_home = 'W'`), they trailed by 10 or more points if the visitor team was leading by 10 or more points (`scoremargin <= -10`) at any point.\n* If the **Away team won** (`wl_away = 'W'`), they trailed by 10 or more points if the home team was leading by 10 or more points (`scoremargin >= 10`) at any point.\n\n---\n\n### Overall Summary (2015-16 to 2022-23)\n* **Total Regular-Season Games with Play-by-Play:** **8,670**\n* **Games with a 10+ Point Comeback by the Winner:** **2,223** \n* **Percentage of Games:** **25.64%** (roughly 1 in every 4 games)\n\n---\n\n### Season-by-Season Breakdown\n\n| Season | Season ID | Total Games with Play-by-Play | Games with 10+ Pt Comeback | Percentage |\n| :--- | :--- | :---: | :---: | :---: |\n| **2015-16** | `22015` | 1,121 | 241 | 21.50% |\n| **2016-17** | `22016` | 1,129 | 293 | 25.95% |\n| **2017-18** | `22017` | 1,128 | 279 | 24.73% |\n| **2018-19** | `22018` | 1,122 | 294 | 26.20% |\n| **2019-20** | `22019` | 963 | 258 | 26.79% |\n| **2020-21** | `22020` | 988 | 251 | 25.40% |\n| **2021-22** | `22021` | 1,113 | 296 | 26.59% |\n| **2022-23** | `22022` | 1,106 | 311 | 28.12% |\n| **Total** | | **8,670** | **2,223** | **25.64%** |",
+ "seconds": 59,
+ "tool_calls": [
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SHOW TABLES;"
+   },
+   "result": "{\"columns\": [\"name\"], \"rows\": [[\"game\"], [\"line_score\"], [\"officials\"], [\"other_stats\"], [\"play_by_play\"], [\"player\"], [\"team\"], [\"team_history\"]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "DESCRIBE game;"
+   },
+   "result": "{\"columns\": [\"column_name\", \"column_type\", \"null\", \"key\", \"default\", \"extra\"], \"rows\": [[\"season_id\", \"VARCHAR\", \"YES\", null, null, null], [\"team_id_home\", \"VARCHAR\", \"YES\", null, null, null], [\"team_abbreviation_home\", \"VARCHAR\", \"YES\", null, null, null], [\"team_name_home\", \"VARCHAR\", \"YES\", null, null, null], [\"game_id\", \"VARCHAR\", \"YES\", null, null, null], [\"game_date\", \"TIMESTAMP\", \"YES\", null, null, null], [\"matchup_home\", \"VARCHAR\", \"YES\", null, null, null], [\"wl_home\", \"VARCHAR\", \"YES\", null, null, null], [\"min\", \"BIGINT\", \"YES\", null, null, null], [\"fgm_home\", \"DOUBLE\", \"YES\", null, null, null], [\"fga_home\", \"DOUBLE\", \"YES\", null, null, null], [\"fg_pct_home\", \"DOUBLE\", \"YES\", null, null, null], [\"fg3m_home\", \"DOUBLE\", \"YES\", null, null, null], [\"fg3a_home\", \"DOUBLE\", \"YES\", null, null, null], [\"fg3_pct_home\", \"DOUBLE\", \"YES\", null, null, null], [\"ftm_home\", \"DOUBLE\", \"YES\", null, null, null], [\"fta_home\", \"DOUBLE\", \"YES\", null, null, null], [\"ft_pct_home\", \"DOUBLE\", \"YES\", null, null, null], [\"oreb_home\", \"DOUBLE\", \"YES\", null, null, null], [\"dreb_home\", \"DOUBLE\", \"YES\", null, null, null], [\"reb_home\", \"DOUBLE\", \"YES\", null, null, null], [\"ast_home\", \"DOUBLE\", \"YES\", null, null, null], [\"stl_home\", \"DOUBLE\", \"YES\", null, null, null], [\"blk_home\", \"DOUBLE\", \"YES\", null, null, null], [\"tov_home\", \"DOUBLE\", \"YES\", null, null, null], [\"pf_home\", \"DOUBLE\", \"YES\", null, null, null], [\"pts_home\", \"DOUBLE\", \"YES\", null, null, null], [\"plus_minus_home\", \"BIGINT\", \"YES\", null, null, null], [\"video_available_home\", \"BIGINT\", \"YES\", null, null, null], [\"team_id_away\", \"VARCHAR\", \"YES\", null, null, null], [\"team_abbreviation_away\", \"VARCHAR\", \"YES\", null, null, null], [\"team_name_away\", \"VARCHAR\", \"YES\", null, null, null], [\"matchup_away\", \"VARCHAR\", \"YES\", null, null, null], [\"wl_away\", \"VARCHAR\", \"YES\", null, null, null], [\"fgm_away\", \"DOUBLE\", \"YES\", null, null, null], [\"fga_away\", \"DOUBLE\", \"YES\", null, null, null], [\"fg_pct_away\", \"DOUBLE\", \"YES\", null, null, null], [\"fg3m_away\", \"DOUBLE\", \"YES\", null, null, null], [\"fg3a_away\", \"DOUBLE\", \"YES\", null, null, null], [\"fg3_pct_away\", \"DOUBLE\", \"YES\", null, null, null], [\"ftm_away\", \"DOUBLE\", \"YES\", null, null, null], [\"fta_away\", \"DOUBLE\", \"YES\", null, null, null], [\"ft_pct_away\", \"DOUBLE\", \"YES\", null, null, null], [\"oreb_away\", \"DOUBLE\", \"YES\", null, null, null], [\"dreb_away\", \"DOUBLE\", \"YES\", null, null, null], [\"reb_away\", \"DOUBLE\", \"YES\", null, null, null], [\"ast_away\", \"DOUBLE\", \"YES\", null, null, null], [\"stl_away\", \"DOUBLE\", \"YES\", null, null, null], [\"blk_away\", \"DOUBLE\", \"YES\", null, null, null], [\"tov_away\", \"DOUBLE\", \"YES\", null, null, null], [\"pf_away\", \"DOUBLE\", \"YES\", null, null, null], [\"pts_away\", \"DOUBLE\", \"YES\", null, null, null], [\"plus_minus_away\", \"BIGINT\", \"YES\", null, null, null], [\"video_available_away\", \"BIGINT\", \"YES\", null, null, null], [\"season_type\", \"VARCHAR\", \"YES\", null, null, null]], \"row_count\": 55, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "DESCRIBE play_by_play;"
+   },
+   "result": "{\"columns\": [\"column_name\", \"column_type\", \"null\", \"key\", \"default\", \"extra\"], \"rows\": [[\"game_id\", \"VARCHAR\", \"YES\", null, null, null], [\"eventnum\", \"BIGINT\", \"YES\", null, null, null], [\"eventmsgtype\", \"BIGINT\", \"YES\", null, null, null], [\"eventmsgactiontype\", \"BIGINT\", \"YES\", null, null, null], [\"period\", \"BIGINT\", \"YES\", null, null, null], [\"pctimestring\", \"VARCHAR\", \"YES\", null, null, null], [\"homedescription\", \"VARCHAR\", \"YES\", null, null, null], [\"neutraldescription\", \"VARCHAR\", \"YES\", null, null, null], [\"visitordescription\", \"VARCHAR\", \"YES\", null, null, null], [\"score\", \"VARCHAR\", \"YES\", null, null, null], [\"scoremargin\", \"VARCHAR\", \"YES\", null, null, null], [\"player1_id\", \"VARCHAR\", \"YES\", null, null, null], [\"player1_name\", \"VARCHAR\", \"YES\", null, null, null], [\"player1_team_id\", \"VARCHAR\", \"YES\", null, null, null], [\"player1_team_abbreviation\", \"VARCHAR\", \"YES\", null, null, null], [\"player2_id\", \"VARCHAR\", \"YES\", null, null, null], [\"player2_name\", \"VARCHAR\", \"YES\", null, null, null], [\"player2_team_id\", \"VARCHAR\", \"YES\", null, null, null], [\"player2_team_abbreviation\", \"VARCHAR\", \"YES\", null, null, null], [\"player3_id\", \"VARCHAR\", \"YES\", null, null, null], [\"player3_name\", \"VARCHAR\", \"YES\", null, null, null], [\"player3_team_id\", \"VARCHAR\", \"YES\", null, null, null], [\"player3_team_abbreviation\", \"VARCHAR\", \"YES\", null, null, null]], \"row_count\": 23, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT season_id, season_type FROM game ORDER BY season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\", \"season_type\"], \"rows\": [[\"22015\", \"Regular Season\"], [\"22016\", \"Regular Season\"], [\"22017\", \"Regular Season\"], [\"22018\", \"Regular Season\"], [\"22019\", \"Regular Season\"], [\"22020\", \"Regular Season\"], [\"22021\", \"Regular Season\"], [\"22022\", \"Regular Season\"], [\"42015\", \"Playoffs\"], [\"42016\", \"Playoffs\"], [\"42017\", \"Playoffs\"], [\"42018\", \"Playoffs\"], [\"42019\", \"Playoffs\"], [\"42020\", \"Playoffs\"], [\"42021\", \"Playoffs\"], [\"42022\", \"Playoffs\"]], \"row_count\": 16, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT season_id, COUNT(*), COUNT(DISTINCT game_id) FROM game WHERE season_type = 'Regular Season' GROUP BY season_id ORDER BY season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\", \"count_star()\", \"count(DISTINCT game_id)\"], \"rows\": [[\"22015\", 1230, 1230], [\"22016\", 1230, 1230], [\"22017\", 1230, 1230], [\"22018\", 1230, 1230], [\"22019\", 1059, 1059], [\"22020\", 1080, 1080], [\"22021\", 1230, 1230], [\"22022\", 1230, 1230]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT * FROM play_by_play LIMIT 20;"
+   },
+   "result": "{\"columns\": [\"game_id\", \"eventnum\", \"eventmsgtype\", \"eventmsgactiontype\", \"period\", \"pctimestring\", \"homedescription\", \"neutraldescription\", \"visitordescription\", \"score\", \"scoremargin\", \"player1_id\", \"player1_name\", \"player1_team_id\", \"player1_team_abbreviation\", \"player2_id\", \"player2_name\", \"player2_team_id\", \"player2_team_abbreviation\", \"player3_id\", \"player3_name\", \"player3_team_id\", \"player3_team_abbreviation\"], \"rows\": [[\"0021500001\", 0, 12, 0, 1, \"12:00\", null, \"Start of 1st Period (8:12 PM EST)\", null, null, null, \"0\", null, null, null, \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 1, 10, 0, 1, \"12:00\", \"Jump Ball Horford vs. Drummond: Tip to Ilyasova\", null, null, null, null, \"201143\", \"Al Horford\", \"1610612737.0\", \"ATL\", \"203083\", \"Andre Drummond\", \"1610612765.0\", \"DET\", \"101141\", \"Ersan Ilyasova\", \"1610612765.0\", \"DET\"], [\"0021500001\", 2, 2, 42, 1, \"11:41\", \"Horford BLOCK (1 BLK)\", null, \"MISS Drummond 2' Driving Layup\", null, null, \"203083\", \"Andre Drummond\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"201143\", \"Al Horford\", \"1610612737.0\", \"ATL\"], [\"0021500001\", 3, 4, 0, 1, \"11:39\", \"Bazemore REBOUND (Off:0 Def:1)\", null, null, null, null, \"203145\", \"Kent Bazemore\", \"1610612737.0\", \"ATL\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 4, 5, 45, 1, \"11:37\", \"Bazemore Out of Bounds - Bad Pass Turnover Turnover (P1.T1)\", null, null, null, null, \"203145\", \"Kent Bazemore\", \"1610612737.0\", \"ATL\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 5, 1, 80, 1, \"11:21\", null, null, \"Marc Morris 13' Step Back Jump Shot (2 PTS) (Drummond 1 AST)\", \"2 - 0\", \"-2\", \"202694\", \"Marcus Morris Sr.\", \"1610612765.0\", \"DET\", \"203083\", \"Andre Drummond\", \"1610612765.0\", \"DET\", \"0\", null, null, null], [\"0021500001\", 6, 1, 80, 1, \"11:00\", \"Millsap 12' Step Back Jump Shot (2 PTS) (Korver 1 AST)\", null, null, \"2 - 2\", \"TIE\", \"200794\", \"Paul Millsap\", \"1610612737.0\", \"ATL\", \"2594\", \"Kyle Korver\", \"1610612737.0\", \"ATL\", \"0\", null, null, null], [\"0021500001\", 7, 1, 101, 1, \"10:44\", null, null, \"Caldwell-Pope 9' Driving Floating Jump Shot (2 PTS) (Ilyasova 1 AST)\", \"4 - 2\", \"-2\", \"203484\", \"Kentavious Caldwell-Pope\", \"1610612765.0\", \"DET\", \"101141\", \"Ersan Ilyasova\", \"1610612765.0\", \"DET\", \"0\", null, null, null], [\"0021500001\", 8, 2, 1, 1, \"10:27\", \"MISS Horford 20' Jump Shot\", null, null, null, null, \"201143\", \"Al Horford\", \"1610612737.0\", \"ATL\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 9, 4, 0, 1, \"10:25\", null, null, \"Jackson REBOUND (Off:0 Def:1)\", null, null, \"202704\", \"Reggie Jackson\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 10, 2, 58, 1, \"10:13\", null, null, \"MISS Drummond 8' Turnaround Hook Shot\", null, null, \"203083\", \"Andre Drummond\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 11, 4, 0, 1, \"10:11\", \"Bazemore REBOUND (Off:0 Def:2)\", null, null, null, null, \"203145\", \"Kent Bazemore\", \"1610612737.0\", \"ATL\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 13, 1, 105, 1, \"10:01\", \"Millsap 12' Turnaround Fadeaway Bank Jump Shot (4 PTS) (Horford 1 AST)\", null, null, \"4 - 4\", \"TIE\", \"200794\", \"Paul Millsap\", \"1610612737.0\", \"ATL\", \"201143\", \"Al Horford\", \"1610612737.0\", \"ATL\", \"0\", null, null, null], [\"0021500001\", 14, 6, 2, 1, \"9:42\", \"Bazemore S.FOUL (P1.T1) (Z.Zarba)\", null, null, null, null, \"203145\", \"Kent Bazemore\", \"1610612737.0\", \"ATL\", \"202694\", \"Marcus Morris Sr.\", \"1610612765.0\", \"DET\", \"0\", null, null, null], [\"0021500001\", 15, 3, 11, 1, \"9:42\", null, null, \"Marc Morris Free Throw 1 of 2 (3 PTS)\", \"5 - 4\", \"-1\", \"202694\", \"Marcus Morris Sr.\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 17, 3, 12, 1, \"9:42\", null, null, \"MISS Marc Morris Free Throw 2 of 2\", null, null, \"202694\", \"Marcus Morris Sr.\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 19, 4, 0, 1, \"9:41\", \"Millsap REBOUND (Off:0 Def:1)\", null, null, null, null, \"200794\", \"Paul Millsap\", \"1610612737.0\", \"ATL\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 20, 2, 79, 1, \"9:29\", \"MISS Teague 15' Pullup Jump Shot\", null, null, null, null, \"201952\", \"Jeff Teague\", \"1610612737.0\", \"ATL\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 21, 4, 0, 1, \"9:28\", null, null, \"Drummond REBOUND (Off:0 Def:1)\", null, null, \"203083\", \"Andre Drummond\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"0\", null, null, null], [\"0021500001\", 22, 1, 103, 1, \"9:22\", null, null, \"Jackson 24' 3PT Running Pull-Up Jump Shot (3 PTS)\", \"8 - 4\", \"-4\", \"202704\", \"Reggie Jackson\", \"1610612765.0\", \"DET\", \"0\", null, null, null, \"0\", null, null, null]], \"row_count\": 20, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT scoremargin, COUNT(*) FROM play_by_play GROUP BY scoremargin LIMIT 30;"
+   },
+   "result": "{\"columns\": [\"scoremargin\", \"count_star()\"], \"rows\": [[\"13\", 19504], [\"19\", 9775], [\"23\", 5793], [\"26\", 3783], [\"-14\", 12981], [\"-17\", 8679], [\"-32\", 822], [\"-34\", 532], [\"-36\", 333], [\"-41\", 123], [\"-46\", 50], [\"-29\", 1335], [\"32\", 1444], [\"38\", 569], [\"41\", 306], [\"40\", 407], [\"34\", 1072], [\"-60\", 4], [\"47\", 77], [\"64\", 2], [\"72\", 1], [null, 3163594], [\"15\", 15701], [\"18\", 11184], [\"-2\", 49075], [\"1\", 48163], [\"-10\", 21818], [\"20\", 8697], [\"22\", 6625], [\"-49\", 43]], \"row_count\": 30, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT scoremargin FROM play_by_play WHERE scoremargin NOT SIMILAR TO '^-?[0-9]+$' AND scoremargin IS NOT NULL;"
+   },
+   "result": "{\"columns\": [\"scoremargin\"], \"rows\": [[\"TIE\"]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT wl_home, wl_away FROM game;"
+   },
+   "result": "{\"columns\": [\"wl_home\", \"wl_away\"], \"rows\": [[\"W\", \"L\"], [\"L\", \"W\"]], \"row_count\": 2, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT \n    COUNT(DISTINCT g.game_id) as total_games,\n    COUNT(DISTINCT p.game_id) as games_with_pbp\nFROM game g\nLEFT JOIN (SELECT DISTINCT game_id FROM play_by_play) p ON g.game_id = p.game_id\nWHERE g.season_type = 'Regular Season' \n  AND g.season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022');"
+   },
+   "result": "{\"columns\": [\"total_games\", \"games_with_pbp\"], \"rows\": [[9519, 8670]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT \n    g.season_id,\n    COUNT(DISTINCT g.game_id) as total_games,\n    COUNT(DISTINCT p.game_id) as games_with_pbp\nFROM game g\nLEFT JOIN (SELECT DISTINCT game_id FROM play_by_play) p ON g.game_id = p.game_id\nWHERE g.season_type = 'Regular Season' \n  AND g.season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022')\nGROUP BY g.season_id\nORDER BY g.season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\", \"total_games\", \"games_with_pbp\"], \"rows\": [[\"22015\", 1230, 1121], [\"22016\", 1230, 1129], [\"22017\", 1230, 1128], [\"22018\", 1230, 1122], [\"22019\", 1059, 963], [\"22020\", 1080, 988], [\"22021\", 1230, 1113], [\"22022\", 1230, 1106]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH pbp_parsed AS (\n    SELECT \n        game_id,\n        CASE \n            WHEN scoremargin = 'TIE' THEN 0 \n            WHEN scoremargin IS NULL THEN NULL \n            ELSE CAST(scoremargin AS INTEGER) \n        END AS margin\n    FROM play_by_play\n)\nSELECT \n    p.game_id,\n    g.wl_home,\n    g.wl_away,\n    MIN(p.margin) AS min_margin,\n    MAX(p.margin) AS max_margin\nFROM pbp_parsed p\nJOIN game g ON p.game_id = g.game_id\nWHERE g.season_type = 'Regular Season' \n  AND g.season_id = '22015'\nGROUP BY p.game_id, g.wl_home, g.wl_away\nLIMIT 10;"
+   },
+   "result": "{\"columns\": [\"game_id\", \"wl_home\", \"wl_away\", \"min_margin\", \"max_margin\"], \"rows\": [[\"0021500944\", \"W\", \"L\", -16, 14], [\"0021501031\", \"L\", \"W\", -13, 11], [\"0021501135\", \"L\", \"W\", -24, 5], [\"0021501139\", \"L\", \"W\", -7, 6], [\"0021500657\", \"W\", \"L\", -7, 19], [\"0021500705\", \"W\", \"L\", -6, 20], [\"0021500842\", \"L\", \"W\", -17, 6], [\"0021501210\", \"L\", \"W\", -15, 1], [\"0021500020\", \"W\", \"L\", -3, 28], [\"0021500092\", \"L\", \"W\", -14, 5]], \"row_count\": 10, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH pbp_parsed AS (\n    SELECT \n        game_id,\n        CASE \n            WHEN scoremargin = 'TIE' THEN 0 \n            WHEN scoremargin IS NULL THEN NULL \n            ELSE CAST(scoremargin AS INTEGER) \n        END AS margin\n    FROM play_by_play\n),\ngame_margins AS (\n    SELECT \n        p.game_id,\n        g.wl_home,\n        g.wl_away,\n        MIN(p.margin) AS min_margin,\n        MAX(p.margin) AS max_margin\n    FROM pbp_parsed p\n    JOIN game g ON p.game_id = g.game_id\n    WHERE g.season_type = 'Regular Season' \n      AND g.season_id = '22015'\n    GROUP BY p.game_id, g.wl_home, g.wl_away\n)\nSELECT * FROM game_margins \nWHERE wl_away = 'W' AND max_margin >= 10 \nLIMIT 5;"
+   },
+   "result": "{\"columns\": [\"game_id\", \"wl_home\", \"wl_away\", \"min_margin\", \"max_margin\"], \"rows\": [[\"0021500390\", \"L\", \"W\", -14, 11], [\"0021500027\", \"L\", \"W\", -8, 13], [\"0021500587\", \"L\", \"W\", -5, 24], [\"0021500324\", \"L\", \"W\", -16, 11], [\"0021501223\", \"L\", \"W\", -5, 18]], \"row_count\": 5, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH game_stats AS (\n    SELECT \n        g.game_id,\n        g.season_id,\n        g.wl_home,\n        g.wl_away,\n        COUNT(p.scoremargin) as non_null_margins\n    FROM game g\n    JOIN play_by_play p ON g.game_id = p.game_id\n    WHERE g.season_type = 'Regular Season' \n      AND g.season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022')\n    GROUP BY g.game_id, g.season_id, g.wl_home, g.wl_away\n)\nSELECT COUNT(*) FROM game_stats WHERE non_null_margins = 0;"
+   },
+   "result": "{\"columns\": [\"count_star()\"], \"rows\": [[0]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH game_stats AS (\n    SELECT \n        g.game_id,\n        g.season_id,\n        g.wl_home,\n        g.wl_away,\n        COUNT(p.scoremargin) as non_null_margins\n    FROM game g\n    JOIN play_by_play p ON g.game_id = p.game_id\n    WHERE g.season_type = 'Regular Season' \n      AND g.season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022')\n    GROUP BY g.game_id, g.season_id, g.wl_home, g.wl_away\n)\nSELECT MIN(non_null_margins), MAX(non_null_margins), AVG(non_null_margins) FROM game_stats;"
+   },
+   "result": "{\"columns\": [\"min(non_null_margins)\", \"max(non_null_margins)\", \"avg(non_null_margins)\"], \"rows\": [[85, 196, 124.07301038062283]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH pbp_parsed AS (\n    SELECT \n        game_id,\n        CASE \n            WHEN scoremargin = 'TIE' THEN 0 \n            WHEN scoremargin IS NULL THEN NULL \n            ELSE CAST(scoremargin AS INTEGER) \n        END AS margin\n    FROM play_by_play\n),\ngame_margins AS (\n    SELECT \n        p.game_id,\n        g.season_id,\n        g.wl_home,\n        g.wl_away,\n        MIN(p.margin) AS min_margin,\n        MAX(p.margin) AS max_margin\n    FROM pbp_parsed p\n    JOIN game g ON p.game_id = g.game_id\n    WHERE g.season_type = 'Regular Season' \n      AND g.season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022')\n    GROUP BY p.game_id, g.season_id, g.wl_home, g.wl_away\n),\ngame_flags AS (\n    SELECT \n        game_id,\n        season_id,\n        CASE \n            WHEN wl_home = 'W' AND min_margin <= -10 THEN 1\n            WHEN wl_away = 'W' AND max_margin >= 10 THEN 1\n            ELSE 0\n        END AS trailed_by_10_or_more\n    FROM game_margins\n)\nSELECT \n    season_id,\n    COUNT(*) AS games_with_pbp,\n    SUM(trailed_by_10_or_more) AS games_with_10pt_comeback,\n    ROUND(100.0 * SUM(trailed_by_10_or_more) / COUNT(*), 2) AS percentage\nFROM game_flags\nGROUP BY season_id\nORDER BY season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\", \"games_with_pbp\", \"games_with_10pt_comeback\", \"percentage\"], \"rows\": [[\"22015\", 1121, 241, 21.5], [\"22016\", 1129, 293, 25.95], [\"22017\", 1128, 279, 24.73], [\"22018\", 1122, 294, 26.2], [\"22019\", 963, 258, 26.79], [\"22020\", 988, 251, 25.4], [\"22021\", 1113, 296, 26.59], [\"22022\", 1106, 311, 28.12]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(*), COUNT(DISTINCT game_id) FROM game;"
+   },
+   "result": "{\"columns\": [\"count_star()\", \"count(DISTINCT game_id)\"], \"rows\": [[10187, 10187]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(DISTINCT game_id) FROM play_by_play WHERE game_id NOT IN (SELECT game_id FROM game);"
+   },
+   "result": "{\"columns\": [\"count(DISTINCT game_id)\"], \"rows\": [[0]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT eventnum, pctimestring, period, homedescription, visitordescription, score, scoremargin \nFROM play_by_play \nWHERE game_id = '0021500944' AND scoremargin IS NOT NULL\nORDER BY eventnum LIMIT 20;"
+   },
+   "result": "{\"columns\": [\"eventnum\", \"pctimestring\", \"period\", \"homedescription\", \"visitordescription\", \"score\", \"scoremargin\"], \"rows\": [[2, \"11:44\", 1, null, \"Lopez 14' Turnaround Jump Shot (2 PTS)\", \"2 - 0\", \"-2\"], [5, \"11:17\", 1, null, \"Young 19' Pullup Jump Shot (2 PTS) (Ellington 1 AST)\", \"4 - 0\", \"-4\"], [16, \"10:00\", 1, \"Valanciunas 2' Layup (2 PTS)\", null, \"4 - 2\", \"-2\"], [19, \"9:43\", 1, \"Powell Free Throw 1 of 2 (1 PTS)\", null, \"4 - 3\", \"-1\"], [21, \"9:43\", 1, \"Powell Free Throw 2 of 2 (2 PTS)\", null, \"4 - 4\", \"TIE\"], [24, \"9:34\", 1, null, \"Young 18' Jump Shot (4 PTS) (Sloan 1 AST)\", \"6 - 4\", \"-2\"], [25, \"9:19\", 1, \"Valanciunas 2' Cutting Layup Shot (4 PTS) (Lowry 1 AST)\", null, \"6 - 6\", \"TIE\"], [26, \"9:08\", 1, null, \"Lopez 22' Jump Shot (4 PTS) (Sloan 2 AST)\", \"8 - 6\", \"-2\"], [30, \"8:29\", 1, \"DeRozan 16' Floating Jump Shot (2 PTS)\", null, \"8 - 8\", \"TIE\"], [31, \"8:14\", 1, null, \"Lopez 16' Jump Shot (6 PTS)\", \"10 - 8\", \"-2\"], [34, \"7:41\", 1, null, \"Sloan 5' Driving Layup (2 PTS)\", \"12 - 8\", \"-4\"], [37, \"7:24\", 1, \"Valanciunas  Putback Dunk (6 PTS) (Thompson 1 AST)\", null, \"12 - 10\", \"-2\"], [40, \"6:53\", 1, \"Thompson 17' Jump Shot (2 PTS) (DeRozan 1 AST)\", null, \"12 - 12\", \"TIE\"], [48, \"6:00\", 1, null, \"Young 1' Cutting Layup Shot (6 PTS) (Ellington 2 AST)\", \"14 - 12\", \"-2\"], [52, \"5:37\", 1, \"DeRozan 2' Driving Dunk (4 PTS) (Lowry 2 AST)\", null, \"14 - 14\", \"TIE\"], [53, \"5:17\", 1, null, \"Bogdanovic 1' Cutting Layup Shot (2 PTS) (Lopez 1 AST)\", \"16 - 14\", \"-2\"], [57, \"4:35\", 1, null, \"Young 18' Step Back Jump Shot (8 PTS)\", \"18 - 14\", \"-4\"], [58, \"4:13\", 1, \"Thompson 25' 3PT Jump Shot (5 PTS) (Powell 1 AST)\", null, \"18 - 17\", \"-1\"], [60, \"3:53\", 1, null, \"Bogdanovic 28' 3PT Jump Shot (5 PTS) (Brown 1 AST)\", \"21 - 17\", \"-4\"], [64, \"3:11\", 1, \"Lowry 5' Driving Layup (2 PTS)\", null, \"21 - 19\", \"-2\"]], \"row_count\": 20, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT season_id, season_type FROM game WHERE season_type = 'Regular Season' AND game_date >= '2015-10-01' AND game_date <= '2023-06-30' ORDER BY season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\", \"season_type\"], \"rows\": [[\"22015\", \"Regular Season\"], [\"22016\", \"Regular Season\"], [\"22017\", \"Regular Season\"], [\"22018\", \"Regular Season\"], [\"22019\", \"Regular Season\"], [\"22020\", \"Regular Season\"], [\"22021\", \"Regular Season\"], [\"22022\", \"Regular Season\"]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH pbp_parsed AS (\n    SELECT \n        game_id,\n        CASE \n            WHEN scoremargin = 'TIE' THEN 0 \n            WHEN scoremargin IS NULL THEN NULL \n            ELSE CAST(scoremargin AS INTEGER) \n        END AS margin\n    FROM play_by_play\n),\ngame_margins AS (\n    SELECT \n        p.game_id,\n        g.wl_home,\n        g.wl_away,\n        MIN(p.margin) AS min_margin,\n        MAX(p.margin) AS max_margin\n    FROM pbp_parsed p\n    JOIN game g ON p.game_id = g.game_id\n    WHERE g.season_type = 'Regular Season' \n      AND g.season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022')\n    GROUP BY p.game_id, g.wl_home, g.wl_away\n),\ngame_flags AS (\n    SELECT \n        game_id,\n        CASE \n            WHEN wl_home = 'W' AND min_margin <= -10 THEN 1\n            WHEN wl_away = 'W' AND max_margin >= 10 THEN 1\n            ELSE 0\n        END AS trailed_by_10_or_more\n    FROM game_margins\n)\nSELECT \n    COUNT(*) AS games_with_pbp,\n    SUM(trailed_by_10_or_more) AS games_with_10pt_comeback,\n    ROUND(100.0 * SUM(trailed_by_10_or_more) / COUNT(*), 2) AS percentage\nFROM game_flags;"
+   },
+   "result": "{\"columns\": [\"games_with_pbp\", \"games_with_10pt_comeback\", \"percentage\"], \"rows\": [[8670, 2223, 25.64]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT season_id, season_type FROM game WHERE season_id IN ('22015', '22016', '22017', '22018', '22019', '22020', '22021', '22022');"
+   },
+   "result": "{\"columns\": [\"season_id\", \"season_type\"], \"rows\": [[\"22016\", \"Regular Season\"], [\"22017\", \"Regular Season\"], [\"22018\", \"Regular Season\"], [\"22021\", \"Regular Season\"], [\"22015\", \"Regular Season\"], [\"22019\", \"Regular Season\"], [\"22022\", \"Regular Season\"], [\"22020\", \"Regular Season\"]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT \n    MIN(CASE WHEN scoremargin = 'TIE' THEN 0 WHEN scoremargin IS NULL THEN NULL ELSE CAST(scoremargin AS INTEGER) END) AS min_margin,\n    MAX(CASE WHEN scoremargin = 'TIE' THEN 0 WHEN scoremargin IS NULL THEN NULL ELSE CAST(scoremargin AS INTEGER) END) AS max_margin\nFROM play_by_play \nWHERE game_id = '0021500001';"
+   },
+   "result": "{\"columns\": [\"min_margin\", \"max_margin\"], \"rows\": [[-19, 5]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT wl_home, wl_away FROM game WHERE game_id = '0021500001';"
+   },
+   "result": "{\"columns\": [\"wl_home\", \"wl_away\"], \"rows\": [[\"L\", \"W\"]], \"row_count\": 1, \"truncated\": false}"
+  }
+ ]
+}

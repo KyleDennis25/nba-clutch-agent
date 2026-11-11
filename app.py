@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from tools import TOOLS, prompt_context, run_tool
+from tools import TOOLS, TOOLS_PLAIN, prompt_context, run_tool, run_tool_plain
 
 # --- Config ---
 
@@ -39,7 +39,7 @@ How you answer
 - Separate what the data shows from why. Only explain a pattern if you checked it with a query (for example, shot mix by player). Otherwise label it plainly as a hypothesis ("possible reason, not tested here").
 - Do not paste SQL in your answer. The interface shows every query and result to the user.
 
-What you cannot answer (say so plainly, then offer the closest thing the data can support)
+What you cannot answer. If a question asks for any of these, the FIRST sentence of your answer must say plainly that the data cannot show it (for example "This data has no shot locations or shot charts"), then name the closest proxy you can compute (for example shot distance in feet) and answer with that, clearly labeled as a proxy.
 - Shot locations or charts (there are only shot distances in feet, missing for some dunks and tips), defensive tracking, who guarded whom, lineups or on-court players, shot clock or possessions.
 - Anything after the 2022-23 season (June 2023) or before 2015-16.
 - Betting, odds or prediction-market questions are out of scope.
@@ -51,18 +51,27 @@ Reference (schema and glossary for the SQL views you query)
 """ + prompt_context()
 
 
+# Baseline for the README comparison: same model and loop, but only run_sql, raw tables, no docs, minimal prompt.
+PLAIN_PROMPT = (
+    "You are a data analyst. Answer the user's question using the NBA database via the run_sql tool "
+    "(DuckDB SQL). Explore the tables first if you need to."
+)
+
+
 # --- The Harness ---
 
 
-def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
+def run_agent(messages: list[dict], mode: str = "agent", max_rounds: int = MAX_TOOL_ROUNDS) -> tuple[str, list[dict]]:
     """Complete until the model answers without asking for a tool.
 
     Returns the final text and a record of every tool call made along the way.
+    mode="plain" is the run_sql-only baseline used for the README comparison.
     """
+    tools, runner = (TOOLS_PLAIN, run_tool_plain) if mode == "plain" else (TOOLS, run_tool)
     tool_calls = []
 
-    for round_no in range(MAX_TOOL_ROUNDS):
-        last_round = round_no == MAX_TOOL_ROUNDS - 1
+    for round_no in range(max_rounds):
+        last_round = round_no == max_rounds - 1
         if last_round:
             # Out of budget: force a written answer from what has been gathered so far.
             messages += [{"role": "user", "content": (
@@ -72,7 +81,7 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
             model=MODEL,
             vertex_location="global",
             messages=messages,
-            tools=TOOLS,
+            tools=tools,
             tool_choice="none" if last_round else "auto",
         ).choices[0].message
 
@@ -91,7 +100,7 @@ def run_agent(messages: list[dict]) -> tuple[str, list[dict]]:
         # The harness, not the model, runs each tool and appends the result
         for call in reply.tool_calls:
             args = json.loads(call.function.arguments)
-            result = run_tool(call.function.name, args)
+            result = runner(call.function.name, args)
             tool_calls += [{"name": call.function.name, "args": args, "result": result}]
 
             messages += [{"role": "tool", "tool_call_id": call.id, "content": result}]
@@ -113,6 +122,7 @@ app = FastAPI()
 class ChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    mode: str = "agent"  # "agent" (default, full) or "plain" (run_sql-only baseline)
 
 
 class ChatResponse(BaseModel):
@@ -131,13 +141,13 @@ def chat(request: ChatRequest):
     # Get or create the session
     session_id = request.session_id or str(uuid.uuid4())
     if session_id not in sessions:
-        sessions[session_id] = [{"role": "system", "content": SYSTEM_PROMPT}]
+        sessions[session_id] = [{"role": "system", "content": PLAIN_PROMPT if request.mode == "plain" else SYSTEM_PROMPT}]
 
     # Append user's message to the context
     sessions[session_id] += [{"role": "user", "content": request.message}]
 
     try:
-        response, tool_calls = run_agent(sessions[session_id])
+        response, tool_calls = run_agent(sessions[session_id], request.mode)
     except Exception as e:
         # Auth, billing, a model that is not running: show it in the chat, not as a 500.
         response, tool_calls = f"Model call failed: {type(e).__name__}: {str(e)[:300]}", []

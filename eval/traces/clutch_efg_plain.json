@@ -1,0 +1,212 @@
+{
+ "id": "clutch_efg",
+ "question": "Clutch time means the last 5 minutes of the 4th quarter or any overtime, when the score is within 5 points. Among players with at least 150 clutch field goal attempts from 2015-16 to 2022-23 (regular season and playoffs), who has the highest clutch effective field goal percentage, and how many attempts did they take?",
+ "mode": "plain",
+ "answer": "Based on an analysis of play-by-play data from the 2015-16 to 2022-23 NBA seasons (including both the regular season and playoffs), here is the player with the highest clutch effective field goal percentage (eFG%):\n\n### **Highest Clutch eFG% Leader**\n* **Player:** **Rudy Gobert**\n* **Clutch Field Goal Attempts (FGA):** **189**\n* **Clutch Field Goals Made (FGM):** **130** (0 3-pointers made)\n* **Clutch Effective Field Goal Percentage (eFG%):** **68.78%**\n\n---\n\n### **Runner-Up Leaders (Minimum 150 Clutch FGA)**\n1. **Bam Adebayo:** 60.00% eFG% (165 FGA, 99 FGM, 0 3PM)\n2. **Andre Drummond:** 59.94% eFG% (176 FGA, 105 FGM, 1 3PM)\n3. **Kelly Oubre Jr.:** 58.25% eFG% (200 FGA, 93 FGM, 47 3PM)\n4. **Joe Harris:** 57.72% eFG% (162 FGA, 77 FGM, 33 3PM)\n\n---\n\n### **What Was Established & Analytical Methodology**\n* **Clutch Time Definition:** Defined as the last 5 minutes of the 4th quarter or any overtime period (`period >= 4` and time remaining `<= 5:00`). \n* **Score Margin Classification (Pre-Shot):** To accurately determine if a shot was attempted during clutch time, we evaluated the score margin **immediately prior** to the field goal attempt (using a window function looking at the preceding event's margin). This is the standard, logical method. (For example, if a team is up by 5 and makes a 3-pointer to go up by 8, the shot was attempted during a 5-point game and should be counted as a clutch attempt, even though the *resulting* margin becomes 8). \n* **eFG% Formula:** Calculated as `(FGM + 0.5 * 3PM) / FGA`. 3-pointers were identified by parsing play descriptions for `\"3PT\"`.\n\n### **What Could Not Be Established**\n* Due to limits on tool calls, we could not run a secondary alternative calculation using the **post-shot score margin** (classifying clutch based on the score margin *after* the shot occurred). However, using the post-shot margin is analytically incorrect for play-by-play shooters, as it falsely excludes made shots that put a team up by more than 5 points and falsely includes shots taken when down by more than 5 points that happen to bring the game within 5.",
+ "seconds": 90,
+ "tool_calls": [
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "PRAGMA show_tables;"
+   },
+   "result": "{\"error\": \"Only read-only SELECT queries (including WITH ... SELECT) are allowed.\"}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT table_name FROM information_schema.tables;"
+   },
+   "result": "{\"columns\": [\"table_name\"], \"rows\": [[\"game\"], [\"line_score\"], [\"officials\"], [\"other_stats\"], [\"player\"], [\"play_by_play\"], [\"team\"], [\"team_history\"]], \"row_count\": 8, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'play_by_play' LIMIT 30;"
+   },
+   "result": "{\"columns\": [\"column_name\", \"data_type\"], \"rows\": [[\"game_id\", \"VARCHAR\"], [\"eventnum\", \"BIGINT\"], [\"eventmsgtype\", \"BIGINT\"], [\"eventmsgactiontype\", \"BIGINT\"], [\"period\", \"BIGINT\"], [\"pctimestring\", \"VARCHAR\"], [\"homedescription\", \"VARCHAR\"], [\"neutraldescription\", \"VARCHAR\"], [\"visitordescription\", \"VARCHAR\"], [\"score\", \"VARCHAR\"], [\"scoremargin\", \"VARCHAR\"], [\"player1_id\", \"VARCHAR\"], [\"player1_name\", \"VARCHAR\"], [\"player1_team_id\", \"VARCHAR\"], [\"player1_team_abbreviation\", \"VARCHAR\"], [\"player2_id\", \"VARCHAR\"], [\"player2_name\", \"VARCHAR\"], [\"player2_team_id\", \"VARCHAR\"], [\"player2_team_abbreviation\", \"VARCHAR\"], [\"player3_id\", \"VARCHAR\"], [\"player3_name\", \"VARCHAR\"], [\"player3_team_id\", \"VARCHAR\"], [\"player3_team_abbreviation\", \"VARCHAR\"]], \"row_count\": 23, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'game' LIMIT 30;"
+   },
+   "result": "{\"columns\": [\"column_name\", \"data_type\"], \"rows\": [[\"season_id\", \"VARCHAR\"], [\"team_id_home\", \"VARCHAR\"], [\"team_abbreviation_home\", \"VARCHAR\"], [\"team_name_home\", \"VARCHAR\"], [\"game_id\", \"VARCHAR\"], [\"game_date\", \"TIMESTAMP\"], [\"matchup_home\", \"VARCHAR\"], [\"wl_home\", \"VARCHAR\"], [\"min\", \"BIGINT\"], [\"fgm_home\", \"DOUBLE\"], [\"fga_home\", \"DOUBLE\"], [\"fg_pct_home\", \"DOUBLE\"], [\"fg3m_home\", \"DOUBLE\"], [\"fg3a_home\", \"DOUBLE\"], [\"fg3_pct_home\", \"DOUBLE\"], [\"ftm_home\", \"DOUBLE\"], [\"fta_home\", \"DOUBLE\"], [\"ft_pct_home\", \"DOUBLE\"], [\"oreb_home\", \"DOUBLE\"], [\"dreb_home\", \"DOUBLE\"], [\"reb_home\", \"DOUBLE\"], [\"ast_home\", \"DOUBLE\"], [\"stl_home\", \"DOUBLE\"], [\"blk_home\", \"DOUBLE\"], [\"tov_home\", \"DOUBLE\"], [\"pf_home\", \"DOUBLE\"], [\"pts_home\", \"DOUBLE\"], [\"plus_minus_home\", \"BIGINT\"], [\"video_available_home\", \"BIGINT\"], [\"team_id_away\", \"VARCHAR\"]], \"row_count\": 30, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT season_id FROM game ORDER BY season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\"], \"rows\": [[\"22015\"], [\"22016\"], [\"22017\"], [\"22018\"], [\"22019\"], [\"22020\"], [\"22021\"], [\"22022\"], [\"42015\"], [\"42016\"], [\"42017\"], [\"42018\"], [\"42019\"], [\"42020\"], [\"42021\"], [\"42022\"]], \"row_count\": 16, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT pctimestring, period, eventmsgtype, eventmsgactiontype, homedescription, visitordescription, score, scoremargin FROM play_by_play LIMIT 15;"
+   },
+   "result": "{\"columns\": [\"pctimestring\", \"period\", \"eventmsgtype\", \"eventmsgactiontype\", \"homedescription\", \"visitordescription\", \"score\", \"scoremargin\"], \"rows\": [[\"12:00\", 1, 12, 0, null, null, null, null], [\"12:00\", 1, 10, 0, \"Jump Ball Horford vs. Drummond: Tip to Ilyasova\", null, null, null], [\"11:41\", 1, 2, 42, \"Horford BLOCK (1 BLK)\", \"MISS Drummond 2' Driving Layup\", null, null], [\"11:39\", 1, 4, 0, \"Bazemore REBOUND (Off:0 Def:1)\", null, null, null], [\"11:37\", 1, 5, 45, \"Bazemore Out of Bounds - Bad Pass Turnover Turnover (P1.T1)\", null, null, null], [\"11:21\", 1, 1, 80, null, \"Marc Morris 13' Step Back Jump Shot (2 PTS) (Drummond 1 AST)\", \"2 - 0\", \"-2\"], [\"11:00\", 1, 1, 80, \"Millsap 12' Step Back Jump Shot (2 PTS) (Korver 1 AST)\", null, \"2 - 2\", \"TIE\"], [\"10:44\", 1, 1, 101, null, \"Caldwell-Pope 9' Driving Floating Jump Shot (2 PTS) (Ilyasova 1 AST)\", \"4 - 2\", \"-2\"], [\"10:27\", 1, 2, 1, \"MISS Horford 20' Jump Shot\", null, null, null], [\"10:25\", 1, 4, 0, null, \"Jackson REBOUND (Off:0 Def:1)\", null, null], [\"10:13\", 1, 2, 58, null, \"MISS Drummond 8' Turnaround Hook Shot\", null, null], [\"10:11\", 1, 4, 0, \"Bazemore REBOUND (Off:0 Def:2)\", null, null, null], [\"10:01\", 1, 1, 105, \"Millsap 12' Turnaround Fadeaway Bank Jump Shot (4 PTS) (Horford 1 AST)\", null, \"4 - 4\", \"TIE\"], [\"9:42\", 1, 6, 2, \"Bazemore S.FOUL (P1.T1) (Z.Zarba)\", null, null, null], [\"9:42\", 1, 3, 11, null, \"Marc Morris Free Throw 1 of 2 (3 PTS)\", \"5 - 4\", \"-1\"]], \"row_count\": 15, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT length(pctimestring) as len, pctimestring FROM play_by_play ORDER BY len LIMIT 20;"
+   },
+   "result": "{\"columns\": [\"len\", \"pctimestring\"], \"rows\": [[4, \"4:10\"], [4, \"1:04\"], [4, \"6:49\"], [4, \"3:29\"], [4, \"8:55\"], [4, \"2:41\"], [4, \"2:40\"], [4, \"4:43\"], [4, \"6:18\"], [4, \"7:40\"], [4, \"3:00\"], [4, \"7:38\"], [4, \"7:21\"], [4, \"4:34\"], [4, \"4:33\"], [4, \"8:35\"], [4, \"1:08\"], [4, \"0:32\"], [4, \"0:17\"], [4, \"8:16\"]], \"row_count\": 20, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT pctimestring, CAST(SPLIT_PART(pctimestring, ':', 1) AS INTEGER) * 60 + CAST(SPLIT_PART(pctimestring, ':', 2) AS INTEGER) as seconds_remaining FROM play_by_play LIMIT 10;"
+   },
+   "result": "{\"columns\": [\"pctimestring\", \"seconds_remaining\"], \"rows\": [[\"12:00\", 720], [\"12:00\", 720], [\"11:41\", 701], [\"11:39\", 699], [\"11:37\", 697], [\"11:21\", 681], [\"11:00\", 660], [\"10:44\", 644], [\"10:27\", 627], [\"10:25\", 625]], \"row_count\": 10, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT scoremargin FROM play_by_play LIMIT 30;"
+   },
+   "result": "{\"columns\": [\"scoremargin\"], \"rows\": [[null], [\"-2\"], [\"TIE\"], [\"-1\"], [\"-4\"], [\"-6\"], [\"-7\"], [\"-5\"], [\"-10\"], [\"-8\"], [\"-9\"], [\"-3\"], [\"2\"], [\"5\"], [\"4\"], [\"1\"], [\"3\"], [\"-12\"], [\"-13\"], [\"-11\"], [\"-15\"], [\"-17\"], [\"-18\"], [\"-16\"], [\"-14\"], [\"-19\"], [\"6\"], [\"7\"], [\"9\"], [\"11\"]], \"row_count\": 30, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT eventmsgtype, eventmsgactiontype, player1_name, score, scoremargin, pctimestring, period FROM play_by_play WHERE game_id = '0021500001' AND period = 4 ORDER BY eventnum LIMIT 50;"
+   },
+   "result": "{\"columns\": [\"eventmsgtype\", \"eventmsgactiontype\", \"player1_name\", \"score\", \"scoremargin\", \"pctimestring\", \"period\"], \"rows\": [[12, 0, null, \"82 - 66\", \"-16\", \"12:00\", 4], [1, 7, \"Aron Baynes\", \"84 - 66\", \"-18\", \"11:44\", 4], [1, 75, \"Dennis Schroder\", \"84 - 68\", \"-16\", \"11:29\", 4], [5, 2, \"Steve Blake\", null, null, \"11:17\", 4], [6, 2, \"Ersan Ilyasova\", null, null, \"11:14\", 4], [3, 11, \"Dennis Schroder\", \"84 - 69\", \"-15\", \"11:14\", 4], [3, 12, \"Dennis Schroder\", \"84 - 70\", \"-14\", \"11:14\", 4], [1, 7, \"Aron Baynes\", \"86 - 70\", \"-16\", \"11:00\", 4], [6, 26, \"Kent Bazemore\", null, null, \"10:50\", 4], [5, 5, \"Kent Bazemore\", null, null, \"10:50\", 4], [2, 1, \"Jodie Meeks\", null, null, \"10:38\", 4], [4, 0, \"Dennis Schroder\", null, null, \"10:37\", 4], [6, 1, \"Stanley Johnson\", null, null, \"10:25\", 4], [6, 1, \"Steve Blake\", null, null, \"10:22\", 4], [6, 26, \"Mike Muscala\", null, null, \"10:16\", 4], [5, 5, \"Mike Muscala\", null, null, \"10:16\", 4], [8, 0, \"Mike Muscala\", null, null, \"10:16\", 4], [9, 1, null, null, null, \"10:16\", 4], [2, 79, \"Stanley Johnson\", null, null, \"10:04\", 4], [4, 0, \"Mike Scott\", null, null, \"10:01\", 4], [5, 2, \"Kent Bazemore\", null, null, \"9:50\", 4], [1, 42, \"Jodie Meeks\", \"88 - 70\", \"-18\", \"9:41\", 4], [1, 1, \"Al Horford\", \"88 - 72\", \"-16\", \"9:29\", 4], [2, 1, \"Ersan Ilyasova\", null, null, \"9:13\", 4], [4, 0, \"Kent Bazemore\", null, null, \"9:11\", 4], [2, 79, \"Dennis Schroder\", null, null, \"9:00\", 4], [4, 0, \"Ersan Ilyasova\", null, null, \"8:59\", 4], [1, 1, \"Aron Baynes\", \"90 - 72\", \"-18\", \"8:48\", 4], [2, 1, \"Mike Scott\", null, null, \"8:22\", 4], [4, 0, \"Aron Baynes\", null, null, \"8:21\", 4], [5, 40, \"Jodie Meeks\", null, null, \"8:14\", 4], [8, 0, \"Kent Bazemore\", null, null, \"8:14\", 4], [8, 0, \"Al Horford\", null, null, \"8:14\", 4], [8, 0, \"Lamar Patterson\", null, null, \"8:14\", 4], [2, 1, \"Paul Millsap\", null, null, \"8:06\", 4], [4, 0, \"Jodie Meeks\", null, null, \"8:05\", 4], [2, 1, \"Steve Blake\", null, null, \"7:52\", 4], [4, 0, \"Jeff Teague\", null, null, \"7:50\", 4], [1, 71, \"Mike Scott\", \"90 - 74\", \"-16\", \"7:39\", 4], [8, 0, \"Jodie Meeks\", null, null, \"7:18\", 4], [8, 0, \"Stanley Johnson\", null, null, \"7:18\", 4], [10, 0, \"Paul Millsap\", null, null, \"7:17\", 4], [2, 1, \"Marcus Morris Sr.\", null, null, \"7:11\", 4], [2, 97, \"Aron Baynes\", null, null, \"7:10\", 4], [4, 0, \"Aron Baynes\", null, null, \"7:10\", 4], [2, 72, \"Ersan Ilyasova\", null, null, \"7:07\", 4], [4, 0, \"Ersan Ilyasova\", null, null, \"7:07\", 4], [4, 0, \"Kyle Korver\", null, null, \"7:06\", 4], [1, 44, \"Mike Scott\", \"90 - 76\", \"-14\", \"7:01\", 4], [9, 1, null, null, null, \"7:01\", 4]], \"row_count\": 50, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT eventnum, eventmsgtype, score, scoremargin,\n       LAST_VALUE(scoremargin IGNORE NULLS) OVER (PARTITION BY game_id ORDER BY eventnum ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as last_margin\nFROM play_by_play\nWHERE game_id = '0021500001' AND period = 4\nORDER BY eventnum LIMIT 30;"
+   },
+   "result": "{\"columns\": [\"eventnum\", \"eventmsgtype\", \"score\", \"scoremargin\", \"last_margin\"], \"rows\": [[363, 12, \"82 - 66\", \"-16\", \"-16\"], [364, 1, \"84 - 66\", \"-18\", \"-18\"], [365, 1, \"84 - 68\", \"-16\", \"-16\"], [366, 5, null, null, \"-16\"], [367, 6, null, null, \"-16\"], [368, 3, \"84 - 69\", \"-15\", \"-15\"], [370, 3, \"84 - 70\", \"-14\", \"-14\"], [372, 1, \"86 - 70\", \"-16\", \"-16\"], [373, 6, null, null, \"-16\"], [374, 5, null, null, \"-16\"], [375, 2, null, null, \"-16\"], [376, 4, null, null, \"-16\"], [377, 6, null, null, \"-16\"], [378, 6, null, null, \"-16\"], [379, 6, null, null, \"-16\"], [380, 5, null, null, \"-16\"], [381, 8, null, null, \"-16\"], [382, 9, null, null, \"-16\"], [385, 2, null, null, \"-16\"], [386, 4, null, null, \"-16\"], [387, 5, null, null, \"-16\"], [388, 1, \"88 - 70\", \"-18\", \"-18\"], [389, 1, \"88 - 72\", \"-16\", \"-16\"], [390, 2, null, null, \"-16\"], [391, 4, null, null, \"-16\"], [392, 2, null, null, \"-16\"], [393, 4, null, null, \"-16\"], [394, 1, \"90 - 72\", \"-18\", \"-18\"], [395, 2, null, null, \"-18\"], [396, 4, null, null, \"-18\"]], \"row_count\": 30, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT homedescription, visitordescription, neutraldescription, eventmsgtype, eventmsgactiontype\nFROM play_by_play\nWHERE eventmsgtype IN (1, 2) AND (homedescription LIKE '%3PT%' OR visitordescription LIKE '%3PT%' OR neutraldescription LIKE '%3PT%')\nLIMIT 10;"
+   },
+   "result": "{\"columns\": [\"homedescription\", \"visitordescription\", \"neutraldescription\", \"eventmsgtype\", \"eventmsgactiontype\"], \"rows\": [[null, \"Jackson 24' 3PT Running Pull-Up Jump Shot (3 PTS)\", null, 1, 103], [null, \"Ilyasova 24' 3PT Jump Shot (3 PTS) (Marc Morris 1 AST)\", null, 1, 1], [\"MISS Sefolosha  3PT Jump Shot\", null, null, 2, 1], [null, \"Caldwell-Pope 24' 3PT Jump Shot (5 PTS) (Jackson 2 AST)\", null, 1, 1], [null, \"MISS Marc Morris 25' 3PT Jump Shot\", null, 2, 1], [\"MISS Millsap 24' 3PT Jump Shot\", null, null, 2, 1], [\"Patterson  3PT Jump Shot (3 PTS) (Schroder 1 AST)\", null, null, 1, 1], [null, \"MISS Blake 36' 3PT Running Jump Shot\", null, 2, 46], [\"Horford 24' 3PT Jump Shot (3 PTS) (Schroder 2 AST)\", null, null, 1, 1], [null, \"Blake 24' 3PT Jump Shot (3 PTS) (Johnson 1 AST)\", null, 1, 1]], \"row_count\": 10, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(*) as count,\n       COUNT(CASE WHEN (LOWER(homedescription) LIKE '%3pt%' OR LOWER(visitordescription) LIKE '%3pt%' OR LOWER(neutraldescription) LIKE '%3pt%') THEN 1 END) as lower_3pt,\n       COUNT(CASE WHEN (homedescription LIKE '%3PT%' OR visitordescription LIKE '%3PT%' OR neutraldescription LIKE '%3PT%') THEN 1 END) as upper_3pt\nFROM play_by_play\nWHERE eventmsgtype IN (1, 2);"
+   },
+   "result": "{\"columns\": [\"count\", \"lower_3pt\", \"upper_3pt\"], \"rows\": [[1617676, 579832, 579832]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT homedescription, visitordescription\nFROM play_by_play\nWHERE eventmsgtype IN (1, 2)\n  AND (LOWER(homedescription) LIKE '%3-pt%' OR LOWER(visitordescription) LIKE '%3-pt%' OR LOWER(homedescription) LIKE '%3 point%' OR LOWER(visitordescription) LIKE '%3 point%')\n  AND NOT (homedescription LIKE '%3PT%' OR visitordescription LIKE '%3PT%')\nLIMIT 10;"
+   },
+   "result": "{\"columns\": [\"homedescription\", \"visitordescription\"], \"rows\": [], \"row_count\": 0, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT eventmsgtype, player1_name, player2_name, player3_name, homedescription, visitordescription\nFROM play_by_play\nWHERE eventmsgtype IN (1, 2) AND player1_name IS NOT NULL\nLIMIT 10;"
+   },
+   "result": "{\"columns\": [\"eventmsgtype\", \"player1_name\", \"player2_name\", \"player3_name\", \"homedescription\", \"visitordescription\"], \"rows\": [[2, \"Andre Drummond\", null, \"Al Horford\", \"Horford BLOCK (1 BLK)\", \"MISS Drummond 2' Driving Layup\"], [1, \"Marcus Morris Sr.\", \"Andre Drummond\", null, null, \"Marc Morris 13' Step Back Jump Shot (2 PTS) (Drummond 1 AST)\"], [1, \"Paul Millsap\", \"Kyle Korver\", null, \"Millsap 12' Step Back Jump Shot (2 PTS) (Korver 1 AST)\", null], [1, \"Kentavious Caldwell-Pope\", \"Ersan Ilyasova\", null, null, \"Caldwell-Pope 9' Driving Floating Jump Shot (2 PTS) (Ilyasova 1 AST)\"], [2, \"Al Horford\", null, null, \"MISS Horford 20' Jump Shot\", null], [2, \"Andre Drummond\", null, null, null, \"MISS Drummond 8' Turnaround Hook Shot\"], [1, \"Paul Millsap\", \"Al Horford\", null, \"Millsap 12' Turnaround Fadeaway Bank Jump Shot (4 PTS) (Horford 1 AST)\", null], [2, \"Jeff Teague\", null, null, \"MISS Teague 15' Pullup Jump Shot\", null], [1, \"Reggie Jackson\", null, null, null, \"Jackson 24' 3PT Running Pull-Up Jump Shot (3 PTS)\"], [2, \"Jeff Teague\", null, null, \"MISS Teague 1' Driving Layup\", null]], \"row_count\": 10, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(*) FROM play_by_play WHERE eventmsgtype IN (1, 2) AND player1_id IS NULL;"
+   },
+   "result": "{\"columns\": [\"count_star()\"], \"rows\": [[0]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(*), COUNT(DISTINCT game_id) FROM game;"
+   },
+   "result": "{\"columns\": [\"count_star()\", \"count(DISTINCT game_id)\"], \"rows\": [[10187, 10187]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT season_id, COUNT(*) FROM game GROUP BY season_id ORDER BY season_id;"
+   },
+   "result": "{\"columns\": [\"season_id\", \"count_star()\"], \"rows\": [[\"22015\", 1230], [\"22016\", 1230], [\"22017\", 1230], [\"22018\", 1230], [\"22019\", 1059], [\"22020\", 1080], [\"22021\", 1230], [\"22022\", 1230], [\"42015\", 86], [\"42016\", 79], [\"42017\", 82], [\"42018\", 82], [\"42019\", 83], [\"42020\", 85], [\"42021\", 87], [\"42022\", 84]], \"row_count\": 16, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT game_id, eventnum, COUNT(*) FROM play_by_play GROUP BY game_id, eventnum HAVING COUNT(*) > 1 LIMIT 5;"
+   },
+   "result": "{\"columns\": [\"game_id\", \"eventnum\", \"count_star()\"], \"rows\": [[\"0021800929\", 350, 2], [\"0021700145\", 449, 2], [\"0021700193\", 562, 2], [\"0021600271\", 118, 2], [\"0021700188\", 372, 2]], \"row_count\": 5, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT * FROM play_by_play WHERE game_id = '0021800929' AND eventnum = 350;"
+   },
+   "result": "{\"columns\": [\"game_id\", \"eventnum\", \"eventmsgtype\", \"eventmsgactiontype\", \"period\", \"pctimestring\", \"homedescription\", \"neutraldescription\", \"visitordescription\", \"score\", \"scoremargin\", \"player1_id\", \"player1_name\", \"player1_team_id\", \"player1_team_abbreviation\", \"player2_id\", \"player2_name\", \"player2_team_id\", \"player2_team_abbreviation\", \"player3_id\", \"player3_name\", \"player3_team_id\", \"player3_team_abbreviation\"], \"rows\": [[\"0021800929\", 350, 1, 79, 3, \"11:32\", null, null, \"Bridges 13' Pullup Jump Shot (7 PTS) (Batum 4 AST)\", \"70 - 50\", \"-20\", \"1628970\", \"Miles Bridges\", \"1610612766.0\", \"CHA\", \"201587\", \"Nicolas Batum\", \"1610612766.0\", \"CHA\", \"0\", null, null, null], [\"0021800929\", 350, 1, 79, 3, \"11:32\", null, null, \"Bridges 13' Pullup Jump Shot (7 PTS) (Batum 4 AST)\", \"70 - 50\", \"-20\", \"1628970\", \"Miles Bridges\", \"1610612766.0\", \"CHA\", \"201587\", \"Nicolas Batum\", \"1610612766.0\", \"CHA\", \"0\", null, null, null]], \"row_count\": 2, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(*), COUNT(DISTINCT (game_id, eventnum)) FROM play_by_play;"
+   },
+   "result": "{\"columns\": [\"count_star()\", \"count(DISTINCT \\\"row\\\"(game_id, eventnum))\"], \"rows\": [[4313409, 4312887]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT COUNT(*) FROM (SELECT DISTINCT * FROM play_by_play);"
+   },
+   "result": "{\"columns\": [\"count_star()\"], \"rows\": [[4312887]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT DISTINCT scoremargin FROM play_by_play WHERE scoremargin IS NOT NULL AND scoremargin != 'TIE' AND try_cast(scoremargin as INTEGER) IS NULL;"
+   },
+   "result": "{\"columns\": [\"scoremargin\"], \"rows\": [], \"row_count\": 0, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT count(*) FROM play_by_play WHERE pctimestring NOT LIKE '%:%';"
+   },
+   "result": "{\"columns\": [\"count_star()\"], \"rows\": [[0]], \"row_count\": 1, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'player' LIMIT 10;"
+   },
+   "result": "{\"columns\": [\"column_name\", \"data_type\"], \"rows\": [[\"id\", \"VARCHAR\"], [\"full_name\", \"VARCHAR\"], [\"first_name\", \"VARCHAR\"], [\"last_name\", \"VARCHAR\"], [\"is_active\", \"BIGINT\"]], \"row_count\": 5, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT pbp.player1_id, p.full_name, COUNT(*) \nFROM play_by_play pbp \nJOIN player p ON pbp.player1_id = p.id \nWHERE pbp.eventmsgtype IN (1, 2) \nGROUP BY pbp.player1_id, p.full_name \nLIMIT 5;"
+   },
+   "result": "{\"columns\": [\"player1_id\", \"full_name\", \"count_star()\"], \"rows\": [[\"203210\", \"JaMychal Green\", 3223], [\"203952\", \"Andrew Wiggins\", 8739], [\"201950\", \"Jrue Holiday\", 8239], [\"202087\", \"Alonzo Gee\", 237], [\"203468\", \"CJ McCollum\", 10396]], \"row_count\": 5, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "SELECT eventnum, eventmsgtype, player1_name, score, scoremargin, pctimestring\nFROM play_by_play\nWHERE game_id = '0021500001' AND period = 4 \n  AND (CAST(SPLIT_PART(pctimestring, ':', 1) AS INTEGER) * 60 + CAST(SPLIT_PART(pctimestring, ':', 2) AS INTEGER)) <= 300\nORDER BY eventnum;"
+   },
+   "result": "{\"columns\": [\"eventnum\", \"eventmsgtype\", \"player1_name\", \"score\", \"scoremargin\", \"pctimestring\"], \"rows\": [[438, 2, \"Andre Drummond\", null, null, \"4:59\"], [439, 4, \"Andre Drummond\", null, null, \"4:59\"], [440, 2, \"Ersan Ilyasova\", null, null, \"4:57\"], [441, 4, \"Ersan Ilyasova\", null, null, \"4:57\"], [442, 1, \"Ersan Ilyasova\", \"94 - 78\", \"-16\", \"4:56\"], [443, 4, \"Andre Drummond\", null, null, \"4:56\"], [444, 6, \"Andre Drummond\", null, null, \"4:47\"], [445, 3, \"Jeff Teague\", null, null, \"4:47\"], [446, 4, null, null, null, \"4:47\"], [447, 8, \"Ersan Ilyasova\", null, null, \"4:47\"], [449, 8, \"Dennis Schroder\", null, null, \"4:47\"], [450, 8, \"Mike Scott\", null, null, \"4:47\"], [451, 3, \"Jeff Teague\", \"94 - 79\", \"-15\", \"4:47\"], [453, 2, \"Kentavious Caldwell-Pope\", null, null, \"4:36\"], [454, 4, \"Al Horford\", null, null, \"4:35\"], [455, 1, \"Kyle Korver\", \"94 - 82\", \"-12\", \"4:27\"], [456, 2, \"Reggie Jackson\", null, null, \"4:08\"], [457, 4, \"Reggie Jackson\", null, null, \"4:05\"], [458, 2, \"Reggie Jackson\", null, null, \"4:05\"], [459, 4, null, null, null, \"4:05\"], [460, 6, \"Lamar Patterson\", null, null, \"4:05\"], [461, 2, \"Stanley Johnson\", null, null, \"3:53\"], [462, 4, \"Marcus Morris Sr.\", null, null, \"3:50\"], [463, 2, \"Stanley Johnson\", null, null, \"3:44\"], [464, 4, \"Paul Millsap\", null, null, \"3:43\"], [465, 6, \"Andre Drummond\", null, null, \"3:38\"], [466, 3, \"Lamar Patterson\", \"94 - 83\", \"-11\", \"3:38\"], [468, 3, \"Lamar Patterson\", \"94 - 84\", \"-10\", \"3:38\"], [470, 1, \"Marcus Morris Sr.\", \"96 - 84\", \"-12\", \"3:15\"], [471, 2, \"Paul Millsap\", null, null, \"3:04\"], [472, 4, \"Andre Drummond\", null, null, \"3:02\"], [473, 9, null, null, null, \"2:52\"], [474, 8, \"Stanley Johnson\", null, null, \"2:52\"], [475, 10, \"Al Horford\", null, null, \"2:52\"], [476, 5, \"Reggie Jackson\", null, null, \"2:52\"], [477, 1, \"Kyle Korver\", \"96 - 86\", \"-10\", \"2:36\"], [478, 2, \"Marcus Morris Sr.\", null, null, \"2:09\"], [479, 2, \"Andre Drummond\", null, null, \"2:07\"], [480, 4, \"Andre Drummond\", null, null, \"2:07\"], [481, 4, \"Al Horford\", null, null, \"2:04\"], [482, 6, \"Kentavious Caldwell-Pope\", null, null, \"1:59\"], [483, 3, \"Jeff Teague\", \"96 - 87\", \"-9\", \"1:59\"], [485, 3, \"Jeff Teague\", \"96 - 88\", \"-8\", \"1:59\"], [487, 2, \"Kentavious Caldwell-Pope\", null, null, \"1:47\"], [488, 4, \"Andre Drummond\", null, null, \"1:45\"], [489, 2, \"Kentavious Caldwell-Pope\", null, null, \"1:42\"], [490, 4, \"Ersan Ilyasova\", null, null, \"1:39\"], [491, 2, \"Ersan Ilyasova\", null, null, \"1:38\"], [492, 4, \"Kentavious Caldwell-Pope\", null, null, \"1:36\"], [493, 2, \"Marcus Morris Sr.\", null, null, \"1:32\"], [494, 4, \"Marcus Morris Sr.\", null, null, \"1:29\"], [495, 6, \"Kyle Korver\", null, null, \"1:15\"], [496, 6, \"Paul Millsap\", null, null, \"1:04\"], [497, 3, \"Ersan Ilyasova\", null, null, \"1:04\"], [498, 4, null, null, null, \"1:04\"], [499, 3, \"Ersan Ilyasova\", \"97 - 88\", \"-9\", \"1:04\"], [501, 6, \"Ersan Ilyasova\", null, null, \"0:55\"], [502, 3, \"Paul Millsap\", \"97 - 89\", \"-8\", \"0:55\"], [504, 3, \"Paul Millsap\", null, null, \"0:55\"], [506, 4, \"Al Horford\", null, null, \"0:52\"], [507, 2, \"Kyle Korver\", null, null, \"0:45\"], [508, 4, \"Andre Drummond\", null, null, \"0:44\"], [509, 6, \"Lamar Patterson\", null, null, \"0:44\"], [510, 3, \"Andre Drummond\", \"98 - 89\", \"-9\", \"0:44\"], [512, 3, \"Andre Drummond\", null, null, \"0:44\"], [514, 4, \"Al Horford\", null, null, \"0:42\"], [515, 1, \"Jeff Teague\", \"98 - 91\", \"-7\", \"0:38\"], [516, 6, \"Jeff Teague\", null, null, \"0:37\"], [517, 3, \"Marcus Morris Sr.\", \"99 - 91\", \"-8\", \"0:37\"], [519, 3, \"Marcus Morris Sr.\", \"100 - 91\", \"-9\", \"0:37\"], [521, 9, null, null, null, \"0:37\"], [523, 1, \"Jeff Teague\", \"100 - 94\", \"-6\", \"0:29\"], [524, 6, \"Lamar Patterson\", null, null, \"0:28\"], [526, 3, \"Kentavious Caldwell-Pope\", \"101 - 94\", \"-7\", \"0:28\"], [528, 3, \"Kentavious Caldwell-Pope\", \"102 - 94\", \"-8\", \"0:28\"], [530, 2, \"Jeff Teague\", null, null, \"0:23\"], [531, 4, \"Ersan Ilyasova\", null, null, \"0:21\"], [532, 6, \"Lamar Patterson\", null, null, \"0:21\"], [533, 3, \"Reggie Jackson\", \"103 - 94\", \"-9\", \"0:21\"], [535, 3, \"Reggie Jackson\", \"104 - 94\", \"-10\", \"0:21\"], [537, 2, \"Kyle Korver\", null, null, \"0:14\"], [538, 4, \"Reggie Jackson\", null, null, \"0:12\"], [539, 6, \"Al Horford\", null, null, \"0:11\"], [541, 3, \"Reggie Jackson\", \"105 - 94\", \"-11\", \"0:11\"], [543, 3, \"Reggie Jackson\", \"106 - 94\", \"-12\", \"0:11\"], [545, 2, \"Al Horford\", null, null, \"0:05\"], [546, 4, \"Andre Drummond\", null, null, \"0:02\"], [548, 13, null, \"106 - 94\", \"-12\", \"0:00\"]], \"row_count\": 88, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH pbp_dedup AS (\n    SELECT DISTINCT * FROM play_by_play\n),\npbp_margins AS (\n    SELECT \n        pbp.*,\n        LAST_VALUE(scoremargin IGNORE NULLS) OVER (\n            PARTITION BY game_id \n            ORDER BY eventnum \n            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n        ) as current_margin,\n        LAST_VALUE(scoremargin IGNORE NULLS) OVER (\n            PARTITION BY game_id \n            ORDER BY eventnum \n            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n        ) as pre_margin\n    FROM pbp_dedup pbp\n)\nSELECT \n    current_margin,\n    pre_margin,\n    score,\n    scoremargin,\n    eventmsgtype,\n    player1_name,\n    pctimestring\nFROM pbp_margins\nWHERE game_id = '0021500001' AND period = 4 AND eventnum >= 515\nORDER BY eventnum;"
+   },
+   "result": "{\"columns\": [\"current_margin\", \"pre_margin\", \"score\", \"scoremargin\", \"eventmsgtype\", \"player1_name\", \"pctimestring\"], \"rows\": [[\"-7\", \"-9\", \"98 - 91\", \"-7\", 1, \"Jeff Teague\", \"0:38\"], [\"-7\", \"-7\", null, null, 6, \"Jeff Teague\", \"0:37\"], [\"-8\", \"-7\", \"99 - 91\", \"-8\", 3, \"Marcus Morris Sr.\", \"0:37\"], [\"-9\", \"-8\", \"100 - 91\", \"-9\", 3, \"Marcus Morris Sr.\", \"0:37\"], [\"-9\", \"-9\", null, null, 9, null, \"0:37\"], [\"-6\", \"-9\", \"100 - 94\", \"-6\", 1, \"Jeff Teague\", \"0:29\"], [\"-6\", \"-6\", null, null, 6, \"Lamar Patterson\", \"0:28\"], [\"-7\", \"-6\", \"101 - 94\", \"-7\", 3, \"Kentavious Caldwell-Pope\", \"0:28\"], [\"-8\", \"-7\", \"102 - 94\", \"-8\", 3, \"Kentavious Caldwell-Pope\", \"0:28\"], [\"-8\", \"-8\", null, null, 2, \"Jeff Teague\", \"0:23\"], [\"-8\", \"-8\", null, null, 4, \"Ersan Ilyasova\", \"0:21\"], [\"-8\", \"-8\", null, null, 6, \"Lamar Patterson\", \"0:21\"], [\"-9\", \"-8\", \"103 - 94\", \"-9\", 3, \"Reggie Jackson\", \"0:21\"], [\"-10\", \"-9\", \"104 - 94\", \"-10\", 3, \"Reggie Jackson\", \"0:21\"], [\"-10\", \"-10\", null, null, 2, \"Kyle Korver\", \"0:14\"], [\"-10\", \"-10\", null, null, 4, \"Reggie Jackson\", \"0:12\"], [\"-10\", \"-10\", null, null, 6, \"Al Horford\", \"0:11\"], [\"-11\", \"-10\", \"105 - 94\", \"-11\", 3, \"Reggie Jackson\", \"0:11\"], [\"-12\", \"-11\", \"106 - 94\", \"-12\", 3, \"Reggie Jackson\", \"0:11\"], [\"-12\", \"-12\", null, null, 2, \"Al Horford\", \"0:05\"], [\"-12\", \"-12\", null, null, 4, \"Andre Drummond\", \"0:02\"], [\"-12\", \"-12\", \"106 - 94\", \"-12\", 13, null, \"0:00\"]], \"row_count\": 22, \"truncated\": false}"
+  },
+  {
+   "name": "run_sql",
+   "args": {
+    "query": "WITH pbp_dedup AS (\n    SELECT DISTINCT * FROM play_by_play\n),\npbp_margins AS (\n    SELECT \n        pbp.game_id,\n        pbp.eventnum,\n        pbp.eventmsgtype,\n        pbp.player1_id,\n        pbp.player1_name,\n        pbp.pctimestring,\n        pbp.period,\n        pbp.homedescription,\n        pbp.visitordescription,\n        pbp.neutraldescription,\n        LAST_VALUE(scoremargin IGNORE NULLS) OVER (\n            PARTITION BY game_id \n            ORDER BY eventnum \n            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n        ) as pre_margin\n    FROM pbp_dedup pbp\n),\nclutch_plays AS (\n    SELECT \n        pm.*,\n        COALESCE(\n            CASE \n                WHEN pm.pre_margin = 'TIE' THEN 0 \n                ELSE ABS(TRY_CAST(pm.pre_margin AS INTEGER)) \n            END, \n            0\n        ) as abs_margin,\n        CAST(SPLIT_PART(pm.pctimestring, ':', 1) AS INTEGER) * 60 + CAST(SPLIT_PART(pm.pctimestring, ':', 2) AS INTEGER) as seconds_remaining\n    FROM pbp_margins pm\n    JOIN game g ON pm.game_id = g.game_id\n    WHERE g.season_id IN ('22015', '42015', '22016', '42016', '22017', '42017', '22018', '42018', '22019', '42019', '22020', '42020', '22021', '42021', '22022', '42022')\n),\nclutch_fga AS (\n    SELECT *\n    FROM clutch_plays\n    WHERE (\n        (period = 4 AND seconds_remaining <= 300)\n        OR (period > 4)\n    )\n    AND abs_margin <= 5\n    AND eventmsgtype IN (1, 2)\n)\nSELECT \n    p.full_name,\n    COUNT(*) as fga,\n    COUNT(CASE WHEN eventmsgtype = 1 THEN 1 END) as fgm,\n    COUNT(CASE WHEN eventmsgtype = 1 AND (LOWER(homedescription) LIKE '%3pt%' OR LOWER(visitordescription) LIKE '%3pt%' OR LOWER(neutraldescription) LIKE '%3pt%') THEN 1 END) as fg3m,\n    (COUNT(CASE WHEN eventmsgtype = 1 THEN 1 END) + 0.5 * COUNT(CASE WHEN eventmsgtype = 1 AND (LOWER(homedescription) LIKE '%3pt%' OR LOWER(visitordescription) LIKE '%3pt%' OR LOWER(neutraldescription) LIKE '%3pt%') THEN 1 END)) / COUNT(*) as efg_pct\nFROM clutch_fga cf\nJOIN player p ON cf.player1_id = p.id\nGROUP BY p.full_name\nHAVING COUNT(*) >= 150\nORDER BY efg_pct DESC\nLIMIT 20;"
+   },
+   "result": "{\"columns\": [\"full_name\", \"fga\", \"fgm\", \"fg3m\", \"efg_pct\"], \"rows\": [[\"Rudy Gobert\", 189, 130, 0, 0.6878306878306878], [\"Bam Adebayo\", 165, 99, 0, 0.6], [\"Andre Drummond\", 176, 105, 1, 0.5994318181818182], [\"Kelly Oubre Jr.\", 200, 93, 47, 0.5825], [\"Joe Harris\", 162, 77, 33, 0.5771604938271605], [\"Domantas Sabonis\", 168, 94, 4, 0.5714285714285714], [\"Aaron Gordon\", 177, 89, 23, 0.5677966101694916], [\"Terry Rozier\", 284, 126, 61, 0.551056338028169], [\"Jae Crowder\", 180, 77, 41, 0.5416666666666666], [\"JJ Redick\", 187, 79, 44, 0.5401069518716578], [\"Patty Mills\", 191, 80, 46, 0.5392670157068062], [\"Giannis Antetokounmpo\", 427, 223, 14, 0.5386416861826698], [\"Al Horford\", 298, 136, 45, 0.5318791946308725], [\"Tyler Herro\", 210, 87, 48, 0.5285714285714286], [\"Lauri Markkanen\", 211, 90, 42, 0.5260663507109005], [\"Chris Paul\", 391, 184, 43, 0.5255754475703325], [\"Stephen Curry\", 558, 238, 110, 0.525089605734767], [\"Karl-Anthony Towns\", 398, 183, 48, 0.5201005025125628], [\"Brook Lopez\", 209, 98, 21, 0.5191387559808612], [\"CJ McCollum\", 524, 237, 68, 0.517175572519084]], \"row_count\": 20, \"truncated\": false}"
+  }
+ ]
+}
