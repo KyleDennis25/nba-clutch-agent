@@ -133,3 +133,10 @@ SELECT g.game_id, g.game_date, g.season_start_year, g.season_label, g.season_typ
 FROM games g
 JOIN m USING (game_id)
 LEFT JOIN read_parquet('{DATA}/other_stats.parquet') o USING (game_id);
+
+-- Reference tables (passed through as views).
+CREATE OR REPLACE VIEW teams AS SELECT * FROM read_parquet('{DATA}/team.parquet');
+CREATE OR REPLACE VIEW players AS SELECT * FROM read_parquet('{DATA}/player.parquet');
+CREATE OR REPLACE VIEW other_stats AS SELECT * FROM read_parquet('{DATA}/other_stats.parquet');
+CREATE OR REPLACE VIEW line_score AS SELECT * FROM read_parquet('{DATA}/line_score.parquet');
+CREATE OR REPLACE VIEW officials AS SELECT * FROM read_parquet('{DATA}/officials.parquet');
