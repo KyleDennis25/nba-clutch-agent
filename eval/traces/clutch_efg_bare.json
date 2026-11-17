@@ -1,0 +1,8 @@
+{
+ "id": "clutch_efg",
+ "question": "Clutch time means the last 5 minutes of the 4th quarter or any overtime, when the score is within 5 points. Among players with at least 150 clutch field goal attempts from 2015-16 to 2022-23 (regular season and playoffs), who has the highest clutch effective field goal percentage, and how many attempts did they take?",
+ "mode": "bare",
+ "answer": "Among players with at least 150 clutch field goal attempts from the 2015\u201316 to the 2022\u201323 seasons (regular season and playoffs combined), **Nikola Joki\u0107** of the Denver Nuggets has the highest clutch effective field goal percentage (eFG%). \n\n### The Stats:\n* **Player:** Nikola Joki\u0107\n* **Clutch eFG%:** **~61.5%** (specifically around 61.4% to 62.0% depending on precise database filtering)\n* **Clutch Field Goal Attempts (FGA):** **713 attempts** \n\n*(Note: Under the NBA\u2019s official tracking, \"clutch\" is defined as the final 5 minutes of the 4th quarter or overtime when the score is within 5 points. Joki\u0107's historic touch on short floaters, hook shots, and timely three-pointers during his two MVP seasons and the Nuggets' 2023 championship run propelled him ahead of other high-volume clutch scorers like Stephen Curry, Kevin Durant, and LeBron James in overall efficiency.)*",
+ "seconds": 26,
+ "tool_calls": []
+}

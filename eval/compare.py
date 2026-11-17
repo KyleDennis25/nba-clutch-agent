@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import litellm  # noqa: E402
 import app  # noqa: E402
 
 OUT = Path(__file__).parent / "traces"
@@ -44,12 +45,18 @@ QUESTIONS = {
 
 def run(qid: str, mode: str):
     q = QUESTIONS[qid]
-    system = app.PLAIN_PROMPT if mode == "plain" else app.SYSTEM_PROMPT
-    msgs = [{"role": "system", "content": system}, {"role": "user", "content": q}]
     t = time.time()
     try:
-        # The baseline gets 30 rounds (vs 12 for the agent) so a failure is not just a step-budget artifact.
-        answer, calls = app.run_agent(msgs, mode, max_rounds=30 if mode == "plain" else app.MAX_TOOL_ROUNDS)
+        if mode == "bare":
+            # Same model, no tools and no system prompt: what it says from memory alone.
+            reply = litellm.completion(model=app.MODEL, vertex_location="global", num_retries=5,
+                                       messages=[{"role": "user", "content": q}]).choices[0].message
+            answer, calls = reply.content or "", []
+        else:
+            system = app.PLAIN_PROMPT if mode == "plain" else app.SYSTEM_PROMPT
+            msgs = [{"role": "system", "content": system}, {"role": "user", "content": q}]
+            # The baseline gets 30 rounds (vs 12 for the agent) so a failure is not just a step-budget artifact.
+            answer, calls = app.run_agent(msgs, mode, max_rounds=30 if mode == "plain" else app.MAX_TOOL_ROUNDS)
     except Exception as e:  # keep going; record the failure
         answer, calls = f"ERROR {type(e).__name__}: {e}", []
     rec = {"id": qid, "question": q, "mode": mode, "answer": answer,
@@ -59,8 +66,13 @@ def run(qid: str, mode: str):
 
 
 if __name__ == "__main__":
-    ids = sys.argv[1:] or list(QUESTIONS)
-    jobs = [(i, m) for i in ids for m in ("plain", "agent")]
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    # Usage: compare.py [--modes bare,plain,agent] [question_id ...]
+    args = sys.argv[1:]
+    modes = ("plain", "agent")
+    if args and args[0] == "--modes":
+        modes, args = tuple(args[1].split(",")), args[2:]
+    ids = args or list(QUESTIONS)
+    jobs = [(i, m) for i in ids for m in modes]
+    with ThreadPoolExecutor(max_workers=3) as ex:  # small pool: Vertex returns 429 under bursts
         for rec in ex.map(lambda j: run(*j), jobs):
             print(f"done {rec['id']:16s} {rec['mode']:5s} {rec['seconds']:4d}s {len(rec['tool_calls']):2d} calls")

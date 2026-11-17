@@ -1,0 +1,8 @@
+{
+ "id": "team_clutch_net",
+ "question": "Clutch time means the last 5 minutes of the 4th quarter or any overtime, when the score is within 5 points. Which team had the best clutch net points (points scored minus points allowed during clutch plays) in the 2022-23 regular season?",
+ "mode": "bare",
+ "answer": "During the 2022-23 NBA regular season, the **Milwaukee Bucks** had the best clutch net points (plus-minus) in the league. \n\nHere is a breakdown of their clutch performance:\n\n* **Clutch Record:** 28\u201313 (.683)\n* **Clutch Points Scored:** 334\n* **Clutch Points Allowed:** 255\n* **Total Clutch Net Points (Plus-Minus):** **+79**\n\nThe Bucks' stellar clutch defense (allowing just 255 points in 41 clutch games) helped them edge out other top clutch teams like the Philadelphia 76ers and the Sacramento Kings to finish with the highest overall clutch point differential.",
+ "seconds": 8,
+ "tool_calls": []
+}
