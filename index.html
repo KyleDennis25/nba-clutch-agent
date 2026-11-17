@@ -46,6 +46,7 @@
           font: inherit; font-size: 13.5px; cursor: pointer; transition: .15s; text-align: left; }
   .chip:hover { border-color: var(--amber); color: var(--amber); }
   .chip.odd { border-style: dashed; color: var(--muted); }
+  .chip.odd::after { content: " (the data can't answer this)"; font-size: 12px; opacity: .8; }
   .chip:disabled { opacity: .5; cursor: wait; }
 
   /* conversation */
@@ -148,7 +149,7 @@
     </div>
   </div>
 
-  <div class="label">Try a question</div>
+  <div class="label">Click a question to try it</div>
   <div class="chips" id="chips"></div>
 
   <div id="log"></div>
@@ -166,14 +167,14 @@
 
 <script>
 const EXAMPLES = [
-  ["Who is the best clutch shooter?", "Among players with at least 150 clutch field goal attempts, who has the highest clutch effective field goal percentage, and how does it compare with their non-clutch shooting?"],
-  ["How often do 10+ point leads hold?", "When a team led by 10 or more points at the end of the 3rd quarter, how often did it win?"],
-  ["Best clutch team of 2022-23", "Which team had the best clutch net points in the 2022-23 regular season?"],
-  ["Biggest scoring run", "What was the biggest unanswered scoring run in a single 2022-23 regular season game, and which game was it?"],
-  ["Do free throws change in clutch time?", "Is free-throw shooting any different in clutch time than the rest of the game, league-wide?"],
-  ["Late-game shot choices", "How do shot choices change in the last 5 minutes of close games compared with the rest of the game, and are they more or less efficient?"],
-  ["Where on the court? (unanswerable)", "Where on the court do teams take their clutch-time shots?", true],
-  ["Celtics 2023-24 (out of range)", "How did the Boston Celtics perform in clutch time in the 2023-24 season?", true],
+  ["Among players with at least 150 clutch field goal attempts, who has the highest clutch effective field goal percentage, and how does it compare with their non-clutch shooting?"],
+  ["When a team led by 10 or more points at the end of the 3rd quarter, how often did it win?"],
+  ["Which team had the best clutch net points in the 2022-23 regular season?"],
+  ["What was the biggest unanswered scoring run in a single 2022-23 regular season game, and which game was it?"],
+  ["Is free-throw shooting any different in clutch time than the rest of the game, league-wide?"],
+  ["How do shot choices change in the last 5 minutes of close games compared with the rest of the game, and are they more or less efficient?"],
+  ["Where on the court do teams take their clutch-time shots?", true],
+  ["How did the Boston Celtics perform in clutch time in the 2023-24 season?", true],
 ];
 
 const $ = (id) => document.getElementById(id);
@@ -181,9 +182,10 @@ const log = $("log"), input = $("q"), goBtn = $("go");
 let sid = null, busy = false;
 
 // chips
-EXAMPLES.forEach(([label, q, odd]) => {
+EXAMPLES.forEach(([q, odd]) => {
   const b = document.createElement("button");
-  b.className = "chip" + (odd ? " odd" : ""); b.textContent = label; b.type = "button";
+  b.className = "chip" + (odd ? " odd" : ""); b.textContent = q; b.type = "button";
+  if (odd) b.title = "The data cannot answer this one. Try it to see how the agent says so.";
   b.onclick = () => ask(q);
   $("chips").appendChild(b);
 });
