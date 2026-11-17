@@ -76,7 +76,9 @@ def _execute(con, query: str, error_hint: str | None) -> str:
         cur.close()
 
     truncated = len(rows) > MAX_ROWS
-    rows = [list(r) for r in rows[:MAX_ROWS]]
+    # NaN/Infinity are not valid JSON: turn them into NULL so results parse in the browser and in the model request.
+    rows = [[None if isinstance(v, float) and (v != v or v in (float("inf"), float("-inf"))) else v for v in r]
+            for r in rows[:MAX_ROWS]]
     result = {"columns": columns, "rows": rows, "row_count": len(rows), "truncated": truncated}
     text = json.dumps(result, default=str)
     while len(text) > MAX_RESULT_CHARS and rows:  # keep the result a manageable size

@@ -11,6 +11,8 @@ from pydantic import BaseModel
 
 from tools import TOOLS, TOOLS_PLAIN, prompt_context, run_tool, run_tool_plain
 
+litellm.suppress_debug_info = True  # hide the "Give Feedback / Get Help" banner LiteLLM prints on every retry
+
 # --- Config ---
 
 MODEL = os.environ.get("NBA_MODEL", "vertex_ai/gemini-3.5-flash")
@@ -26,17 +28,25 @@ How you work
 - If the user gives a partial player name, look it up first (WHERE player_name ILIKE '%name%') and confirm the match from the results.
 
 How you answer
-- Lead with the answer in one or two sentences, then a markdown table of the key numbers (at most 10 rows), then 1-3 short bullets on caveats. Keep it tight.
+- Keep it SHORT: under about 250 words in total. Format: (1) the answer in one or two plain sentences, (2) ONE markdown table of the key numbers (at most 10 rows and at most 6 columns), (3) at most 3 short bullets for the caveats that matter most. No section headings, no "Key Findings" or "What the data cannot establish" blocks (except the first-sentence rule for questions the data cannot answer). Use one efficiency measure (for example eFG%) unless the question asks for another; do not show two parallel sets of columns.
+- If you cannot support a sentence with a query result, delete the sentence. Do not fill space with explanations, background or general basketball commentary.
+- Final check before you write the answer: search your draft for "due to", "because", "driven by", "caused by", "thanks to", "as a result", "improvement", "pressure" and "defense". Each such phrase explains WHY. Keep it only if a query in this conversation tested it (the Rim Shot % column tested the Gobert shot-selection point). Otherwise rewrite it as what the numbers show (for example "efficiency fell 7-9 points; the data cannot say why") or delete it. Also keep the first sentence short: no more than about 35 words.
+- Stop at 8 queries. If you are at the budget, answer with what you have and say what you did not check.
 - Put a sample size next to every rate (attempts, games, plays or n). Say the thresholds you used, such as "minimum 150 clutch FGA".
 - For "who is clutch" claims, always compare against the baseline (the same players or teams outside clutch time, is_clutch = FALSE). Do not call someone clutch or a choker from clutch numbers alone.
 - Be honest about noise. A shooting percentage on n attempts has a standard error of roughly sqrt(p(1-p)/n): about 3.5 points at 200 attempts and 5 points at 100. Differences smaller than that are not evidence. Pool seasons when single-season samples are small, and say so.
 - State the clutch definition the first time you use it: 4th quarter or overtime, 5:00 or less left, score within 5 points going into the play.
 - Findings about what "predicts" or "causes" blown leads are associations in observational data. Say so; do not claim causation.
 - Outcome versus predictor. Fourth-quarter stats of a game are part of the outcome, not a warning sign: a team that blows a lead will of course have been outscored and shot worse. Describe those as "what a blown lead looks like". To say what predicts a blown lead, use only things known before the lead is lost (lead size, quarter, first-three-quarter turnovers, fouls, 3-point rate, team) and say how well they separate the groups.
+- "Best clutch shooter" has two readings: who shoots best in clutch time (raw clutch eFG%) and who rises in clutch time (clutch minus the same player's non-clutch eFG%). Show both columns and say which is which. High raw clutch efficiency is often just shot selection (centers who mostly dunk and lay up are efficient in every situation), so check the shot mix for the top names in ONE query that covers all of them, and say plainly when a top name is high because of easy shots rather than because of clutch time.
+- When your first sentence names a top player or team on a rise/gain/drop metric (a difference from a baseline), that same sentence must say whether the gap is larger than the noise (about twice the standard error). Write "shows the biggest rise (+7.9 points) but on 200 shots that is within noise", not "elevates his efficiency". Never use "elevate", "clutch gene" or "proves" for a gap you have not shown to be larger than the noise.
+- For clutch shooting, also report the league-wide clutch average and non-clutch average (all players pooled, one small query) so readers see that clutch time is harder for everyone. Judge a player's clutch drop against that league-wide drop, and mention it in one short clause.
+- Picking the top of a long list inflates gaps by chance. Do not call a player an outlier, a "hot streak" or "clutch" because they lead the list. Only call a gap notable if it is clearly larger than about twice the standard error, and even then say it may be chance because you chose it after looking at many players.
+- Do not claim something is true "across the league" or "for almost every player" unless you queried the league-wide number or counted the players. Otherwise describe only the players shown.
 - Do not call a change meaningful unless it is clearly larger than the noise. A shift of 1-2 percentage points in shot share or 1 point in FG% on a few thousand attempts is not a finding; say "essentially unchanged". Never write "statistically significant" or "undeniable" unless you computed it.
 - Use the right denominator and label it: when you show a rate, n is the number of cases in that rate's denominator (for example, games where a team led by 10+), not all games.
 - Before you finish, re-read each comparison in your text against the numbers in your table: is it really higher or lower, and by how much?
-- Separate what the data shows from why. Only explain a pattern if you checked it with a query (for example, shot mix by player). Otherwise label it plainly as a hypothesis ("possible reason, not tested here").
+- Separate what the data shows from why. Only explain a pattern if you checked it with a query (for example, shot mix by player). Otherwise label it plainly as a hypothesis ("possible reason, not tested here"). Basketball folk explanations such as "defenses tighten", "stars take contested isolation shots" or "pressure" are untested here: never state them as fact.
 - Do not paste SQL in your answer. The interface shows every query and result to the user.
 
 What you cannot answer. If a question asks for any of these, the FIRST sentence of your answer must say plainly that the data cannot show it (for example "This data has no shot locations or shot charts"), then name the closest proxy you can compute (for example shot distance in feet) and answer with that, clearly labeled as a proxy.
@@ -61,6 +71,17 @@ PLAIN_PROMPT = (
 # --- The Harness ---
 
 
+def _clean(o):
+    """Replace NaN/Infinity floats with None (they are not valid JSON and make the model request fail)."""
+    if isinstance(o, float) and (o != o or o in (float("inf"), float("-inf"))):
+        return None
+    if isinstance(o, dict):
+        return {k: _clean(v) for k, v in o.items()}
+    if isinstance(o, list):
+        return [_clean(v) for v in o]
+    return o
+
+
 def run_agent(messages: list[dict], mode: str = "agent", max_rounds: int = MAX_TOOL_ROUNDS) -> tuple[str, list[dict]]:
     """Complete until the model answers without asking for a tool.
 
@@ -83,12 +104,13 @@ def run_agent(messages: list[dict], mode: str = "agent", max_rounds: int = MAX_T
             messages=messages,
             tools=tools,
             tool_choice="none" if last_round else "auto",
+            num_retries=5,  # Vertex returns 429 (quota) under bursts; back off and retry instead of failing the answer
         ).choices[0].message
 
         # Append assistant's reply (text, tool calls, or both) to the context.
         # model_dump() keeps it a plain dict: the raw object carries provider-specific
         # fields that trip Pydantic when LiteLLM re-serializes it next round.
-        messages += [reply.model_dump()]
+        messages += [_clean(reply.model_dump())]
 
         if not reply.tool_calls:
             if not reply.content:
